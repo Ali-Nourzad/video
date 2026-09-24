@@ -1,4 +1,4 @@
 window.TCHOOBCONFIG = {
-	supabaseUrl: "YOUR_SUPABASE_PROJECT_URL",
-	supabaseAnonKey: "YOUR_SUPABASE_ANON_OR_PUBLISHABLE_KEY"
+	supabaseUrl: "https://rjvbjkfhumjaeldlubig.supabase.co",
+	supabaseAnonKey: "sb_publishable_x43MndGI6cCcigeqcUBf0g_wSikjGMs"
 };
