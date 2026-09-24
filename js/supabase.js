@@ -1,4 +1,4 @@
 window.db = window.supabase.createClient(
-	TCHOOBCONFIG.supabaseUrl,
-	TCHOOBCONFIG.supabaseAnonKey
+	window.TCHOOBCONFIG.supabaseUrl,
+	window.TCHOOBCONFIG.supabaseAnonKey
 );
