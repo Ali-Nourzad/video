@@ -1,7 +1,125 @@
-async function user(){const{data}=await window.db.auth.getUser();return data?.user||null}
-async function profile(id){const{data}=await window.db.from("profiles").select("*").eq("id",id).single();return data||null}
-async function requireUser(admin=false){const u=await user();if(!u){location.href="login.html";return null}const p=await profile(u.id);if(!p){location.href="login.html";return null}if(admin&&p.role!=="admin"){location.href="orders.html";return null}if(!admin&&p.role==="admin"&&location.pathname.endsWith("admin.html"))return{user:u,profile:p};return{user:u,profile:p}}
-async function login(email,password){const{data,error}=await window.db.auth.signInWithPassword({email,password});if(error)return{ok:false,error:error.message};return{ok:true,user:data.user,profile:await profile(data.user.id)}}
-async function signup(x){const{data,error}=await window.db.auth.signUp({email:x.email,password:x.password,options:{data:{first_name:x.firstName,last_name:x.lastName,phone:x.phone}}});if(error)return{ok:false,error:error.message};return{ok:true,session:data.session,message:data.session?"حساب ساخته شد.":"حساب ساخته شد. ایمیل تأیید را بررسی کنید."}}
-async function logout(){await window.db.auth.signOut();location.href="index.html"}
-async function saveProfile(x){const u=await user();if(!u)return{ok:false,error:"نشست کاربر معتبر نیست."};const{error}=await window.db.from("profiles").update({first_name:x.firstName,last_name:x.lastName,phone:x.phone,address:x.address,updated_at:new Date().toISOString()}).eq("id",u.id);return error?{ok:false,error:error.message}:{ok:true}}
+async function user() {
+	const { data } = await window.db.auth.getUser();
+	return data?.user || null;
+}
+
+async function profile(id) {
+	const { data } = await window.db
+		.from("profiles")
+		.select("*")
+		.eq("id", id)
+		.single();
+
+	return data || null;
+}
+
+async function requireUser(admin = false) {
+	const u = await user();
+
+	if (!u) {
+		location.href = "login.html";
+		return null;
+	}
+
+	const p = await profile(u.id);
+
+	if (!p) {
+		location.href = "login.html";
+		return null;
+	}
+
+	if (admin && p.role !== "admin") {
+		location.href = "orders.html";
+		return null;
+	}
+
+	return {
+		user: u,
+		profile: p
+	};
+}
+
+async function login(email, password) {
+	const { data, error } = await window.db.auth.signInWithPassword({
+		email,
+		password
+	});
+
+	if (error) {
+		return {
+			ok: false,
+			error: error.message
+		};
+	}
+
+	return {
+		ok: true,
+		user: data.user,
+		profile: await profile(data.user.id)
+	};
+}
+
+async function signup(x) {
+	const { data, error } = await window.db.auth.signUp({
+		email: x.email,
+		password: x.password,
+		options: {
+			data: {
+				first_name: x.firstName,
+				last_name: x.lastName,
+				phone: x.phone
+			}
+		}
+	});
+
+	if (error) {
+		return {
+			ok: false,
+			error: error.message
+		};
+	}
+
+	return {
+		ok: true,
+		session: data.session,
+		message: data.session
+			? "حساب ساخته شد."
+			: "حساب ساخته شد. ایمیل تأیید را بررسی کنید."
+	};
+}
+
+async function logout() {
+	await window.db.auth.signOut();
+	location.href = "index.html";
+}
+
+async function saveProfile(x) {
+	const u = await user();
+
+	if (!u) {
+		return {
+			ok: false,
+			error: "نشست کاربر معتبر نیست."
+		};
+	}
+
+	const { error } = await window.db
+		.from("profiles")
+		.update({
+			first_name: x.firstName,
+			last_name: x.lastName,
+			phone: x.phone,
+			address: x.address,
+			updated_at: new Date().toISOString()
+		})
+		.eq("id", u.id);
+
+	return error
+		? {
+			ok: false,
+			error: error.message
+		}
+		: {
+			ok: true
+		};
+}
