@@ -112,6 +112,13 @@ async function createOrder(x) {
 		.single();
 
 	if (error) {
+		console.error("CREATE ORDER ERROR:", {
+			code: error.code,
+			message: error.message,
+			details: error.details,
+			hint: error.hint
+		});
+	
 		return {
 			ok: false,
 			error: error.message
