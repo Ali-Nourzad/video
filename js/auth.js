@@ -1,7 +1,9 @@
 async function user() {
 	const { data } = await window.db.auth.getUser();
+
 	return data?.user || null;
 }
+
 
 async function profile(id) {
 	const { data } = await window.db
@@ -12,6 +14,7 @@ async function profile(id) {
 
 	return data || null;
 }
+
 
 async function requireUser(admin = false) {
 	const u = await user();
@@ -39,6 +42,7 @@ async function requireUser(admin = false) {
 	};
 }
 
+
 async function login(email, password) {
 	const { data, error } = await window.db.auth.signInWithPassword({
 		email,
@@ -58,6 +62,7 @@ async function login(email, password) {
 		profile: await profile(data.user.id)
 	};
 }
+
 
 async function signup(x) {
 	const { data, error } = await window.db.auth.signUp({
@@ -88,10 +93,13 @@ async function signup(x) {
 	};
 }
 
+
 async function logout() {
 	await window.db.auth.signOut();
+
 	location.href = "index.html";
 }
+
 
 async function saveProfile(x) {
 	const u = await user();
@@ -114,12 +122,14 @@ async function saveProfile(x) {
 		})
 		.eq("id", u.id);
 
-	return error
-		? {
+	if (error) {
+		return {
 			ok: false,
 			error: error.message
-		}
-		: {
-			ok: true
 		};
+	}
+
+	return {
+		ok: true
+	};
 }
