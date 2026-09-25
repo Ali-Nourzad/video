@@ -1,21 +1,44 @@
-const durationMap = {
-	"30": "حدود ۳۰ ثانیه",
-	"60": "حدود ۱ دقیقه",
-	"120": "حدود ۲ دقیقه",
-	"180": "حدود ۳ دقیقه",
-	"300": "حدود ۵ دقیقه",
-	"600": "حدود ۱۰ دقیقه",
-	custom: "بیشتر از ۱۰ دقیقه"
-};
+const MAX_FILE_SIZE = 500 * 1024 * 1024;
 
 
-async function uploadFile(orderId, userId, file) {
-	const name = file.name.replace(
+function getDurationText(value) {
+	const map = {
+		"30": "حدود ۳۰ ثانیه",
+		"60": "حدود ۱ دقیقه",
+		"120": "حدود ۲ دقیقه",
+		"180": "حدود ۳ دقیقه",
+		"300": "حدود ۵ دقیقه",
+		"600": "حدود ۱۰ دقیقه",
+		custom: "بیشتر از ۱۰ دقیقه"
+	};
+
+	return map[value] || value || "-";
+}
+
+
+async function uploadOrderFile(orderId, userId, file, role = "source") {
+	if (!file) {
+		return {
+			ok: false,
+			error: "فایل معتبر نیست."
+		};
+	}
+
+	if (file.size > MAX_FILE_SIZE) {
+		return {
+			ok: false,
+			error: `حجم فایل ${file.name} بیشتر از ۵۰۰ مگابایت است.`
+		};
+	}
+
+	const safeName = file.name.replace(
 		/[^\w\u0600-\u06FF.\- ]/g,
 		"_"
 	);
 
-	const path = `${userId}/${orderId}/${crypto.randomUUID()}-${name}`;
+	const path =
+		`${userId}/${orderId}/` +
+		`${crypto.randomUUID()}-${safeName}`;
 
 	const upload = await window.db
 		.storage
@@ -25,15 +48,11 @@ async function uploadFile(orderId, userId, file) {
 		});
 
 	if (upload.error) {
-		return upload.error.message;
+		return {
+			ok: false,
+			error: upload.error.message
+		};
 	}
-
-	const fileUrl = window.db
-		.storage
-		.from("video-files")
-		.getPublicUrl(path)
-		.data
-		.publicUrl;
 
 	const insert = await window.db
 		.from("order_files")
@@ -42,16 +61,27 @@ async function uploadFile(orderId, userId, file) {
 			uploaded_by: userId,
 			file_name: file.name,
 			file_path: path,
-			file_url: fileUrl,
+			file_url: null,
 			file_size: file.size,
-			mime_type: file.type || "application/octet-stream"
+			mime_type: file.type || "application/octet-stream",
+			file_role: role
 		});
 
 	if (insert.error) {
-		return insert.error.message;
+		await window.db
+			.storage
+			.from("video-files")
+			.remove([path]);
+
+		return {
+			ok: false,
+			error: insert.error.message
+		};
 	}
 
-	return null;
+	return {
+		ok: true
+	};
 }
 
 
@@ -63,14 +93,19 @@ async function createOrder(x) {
 			title: x.title,
 			subject: x.subject,
 			description: x.description,
-			estimated_duration:
-				durationMap[x.duration] || x.duration,
+			estimated_duration: getDurationText(x.duration),
 			production_model: x.model,
-			aspect_ratio: x.aspectRatio,
-			output_quality: x.quality,
-			video_style: x.style,
-			reference_links: x.links,
-			special_notes: x.notes,
+
+			has_script: !!x.hasScript,
+			has_voice: !!x.hasVoice,
+			has_visuals: !!x.hasVisuals,
+
+			aspect_ratio: x.aspectRatio || null,
+			output_quality: x.quality || null,
+			video_style: x.style || null,
+			reference_links: x.links || null,
+			special_notes: x.notes || null,
+
 			status: "new"
 		})
 		.select()
@@ -83,18 +118,21 @@ async function createOrder(x) {
 		};
 	}
 
-	for (const file of Array.from(x.files || [])) {
-		const errorMessage = await uploadFile(
+	const files = Array.from(x.files || []);
+
+	for (const file of files) {
+		const result = await uploadOrderFile(
 			order.id,
 			x.userId,
-			file
+			file,
+			"source"
 		);
 
-		if (errorMessage) {
+		if (!result.ok) {
 			return {
 				ok: false,
 				error:
-					`سفارش ثبت شد اما فایل ${file.name} ارسال نشد: ${errorMessage}`
+					`سفارش ثبت شد اما فایل «${file.name}» آپلود نشد: ${result.error}`
 			};
 		}
 	}
