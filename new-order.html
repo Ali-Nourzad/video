@@ -120,14 +120,28 @@
 
 						<label>
 							مدل تولید
-							<select id="production_model" name="production_model">
+							<select id="production_model" name="production_model" required>
 								<option value="">انتخاب کنید</option>
-								<option value="تبلیغاتی">تبلیغاتی</option>
-								<option value="معرفی محصول">معرفی محصول</option>
-								<option value="آموزشی">آموزشی</option>
-								<option value="شبکه اجتماعی">شبکه اجتماعی</option>
-								<option value="محتوایی">محتوایی</option>
-								<option value="سایر">سایر</option>
+						
+								<option value="edit_only">
+									فقط تدوین
+								</option>
+						
+								<option value="voice_ready">
+									گویندگی آماده است
+								</option>
+						
+								<option value="visual_ready">
+									محتوای تصویری آماده است
+								</option>
+						
+								<option value="script_ready">
+									سناریو آماده است
+								</option>
+						
+								<option value="full_production">
+									تولید کامل
+								</option>
 							</select>
 						</label>
 
