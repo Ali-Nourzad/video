@@ -1,286 +1,234 @@
 "use strict";
 
-const STATUS_LABELS = {
-	pending: "در انتظار بررسی",
-	processing: "در حال انجام",
-	in_progress: "در حال انجام",
-	review: "در حال بررسی",
-	completed: "تکمیل‌شده",
-	delivered: "تحویل‌شده",
-	cancelled: "لغوشده",
-	canceled: "لغوشده"
+const durationMap = {
+	"30": "حدود ۳۰ ثانیه",
+	"60": "حدود ۱ دقیقه",
+	"120": "حدود ۲ دقیقه",
+	"180": "حدود ۳ دقیقه",
+	"300": "حدود ۵ دقیقه",
+	"600": "حدود ۱۰ دقیقه",
+	"custom": "بیشتر از ۱۰ دقیقه"
 };
 
-function escapeHtml(value) {
-	if (value === null || value === undefined) {
-		return "";
+
+async function uploadFile(orderId, userId, file) {
+
+	if (!window.db) {
+		return "اتصال به Supabase برقرار نشده است.";
 	}
 
-	return String(value)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}
+	const safeName = file.name
+		.replace(/[^\w\u0600-\u06FF.\- ]/g, "_");
 
-function formatDate(value) {
-	if (!value) {
-		return "—";
+	const path =
+		`${userId}/${orderId}/${crypto.randomUUID()}-${safeName}`;
+
+
+	const uploadResult =
+		await window.db.storage
+			.from("video-files")
+			.upload(
+				path,
+				file,
+				{
+					upsert: false
+				}
+			);
+
+
+	if (uploadResult.error) {
+		return uploadResult.error.message;
 	}
 
-	try {
-		return new Intl.DateTimeFormat("fa-IR", {
-			dateStyle: "medium",
-			timeStyle: "short"
-		}).format(new Date(value));
-	} catch {
-		return "—";
-	}
-}
 
-function formatDuration(value) {
-	if (!value) {
-		return "—";
-	}
+	const publicUrlResult =
+		window.db.storage
+			.from("video-files")
+			.getPublicUrl(path);
 
-	return escapeHtml(value);
-}
 
-function getStatusLabel(status) {
-	if (!status) {
-		return "نامشخص";
-	}
+	const fileUrl =
+		publicUrlResult.data.publicUrl;
 
-	return STATUS_LABELS[status] || status;
-}
 
-function getStatusClass(status) {
-	switch (status) {
-		case "completed":
-		case "delivered":
-			return "success";
-
-		case "processing":
-		case "in_progress":
-		case "review":
-			return "info";
-
-		case "cancelled":
-		case "canceled":
-			return "danger";
-
-		case "pending":
-		default:
-			return "warning";
-	}
-}
-
-function updateSummary(orders) {
-	const totalElement = document.getElementById("orders-count");
-	const pendingElement = document.getElementById("pending-count");
-	const processingElement = document.getElementById("processing-count");
-	const completedElement = document.getElementById("completed-count");
-
-	const pending = orders.filter(order =>
-		order.status === "pending"
-	).length;
-
-	const processing = orders.filter(order =>
-		["processing", "in_progress", "review"].includes(order.status)
-	).length;
-
-	const completed = orders.filter(order =>
-		["completed", "delivered"].includes(order.status)
-	).length;
-
-	if (totalElement) {
-		totalElement.textContent = orders.length.toLocaleString("fa-IR");
-	}
-
-	if (pendingElement) {
-		pendingElement.textContent = pending.toLocaleString("fa-IR");
-	}
-
-	if (processingElement) {
-		processingElement.textContent = processing.toLocaleString("fa-IR");
-	}
-
-	if (completedElement) {
-		completedElement.textContent = completed.toLocaleString("fa-IR");
-	}
-}
-
-function renderOrders(orders) {
-	const loading = document.getElementById("orders-loading");
-	const errorBox = document.getElementById("orders-error");
-	const emptyBox = document.getElementById("orders-empty");
-	const tableWrapper = document.getElementById("orders-table-wrapper");
-	const tableBody = document.getElementById("orders-table-body");
-
-	if (loading) {
-		loading.hidden = true;
-	}
-
-	if (errorBox) {
-		errorBox.hidden = true;
-	}
-
-	if (!orders || orders.length === 0) {
-		if (emptyBox) {
-			emptyBox.hidden = false;
-		}
-
-		if (tableWrapper) {
-			tableWrapper.hidden = true;
-		}
-
-		updateSummary([]);
-
-		return;
-	}
-
-	if (emptyBox) {
-		emptyBox.hidden = true;
-	}
-
-	if (tableWrapper) {
-		tableWrapper.hidden = false;
-	}
-
-	if (!tableBody) {
-		return;
-	}
-
-	tableBody.innerHTML = orders.map(order => {
-		const statusClass = getStatusClass(order.status);
-		const statusLabel = getStatusLabel(order.status);
-
-		return `
-			<tr>
-				<td>
-					<strong>${escapeHtml(order.title || "بدون عنوان")}</strong>
-				</td>
-
-				<td>
-					${escapeHtml(order.subject || "—")}
-				</td>
-
-				<td>
-					${formatDuration(order.estimated_duration)}
-				</td>
-
-				<td>
-					${escapeHtml(order.production_model || "—")}
-				</td>
-
-				<td>
-					<span class="status ${statusClass}">
-						${escapeHtml(statusLabel)}
-					</span>
-				</td>
-
-				<td>
-					${formatDate(order.created_at)}
-				</td>
-
-				<td>
-					<a
-						class="button secondary small"
-						href="order.html?id=${encodeURIComponent(order.id)}"
-					>
-						مشاهده
-					</a>
-				</td>
-			</tr>
-		`;
-	}).join("");
-
-	updateSummary(orders);
-}
-
-async function loadOrders() {
-	const loading = document.getElementById("orders-loading");
-	const errorBox = document.getElementById("orders-error");
-	const emptyBox = document.getElementById("orders-empty");
-	const tableWrapper = document.getElementById("orders-table-wrapper");
-
-	if (loading) {
-		loading.hidden = false;
-	}
-
-	if (errorBox) {
-		errorBox.hidden = true;
-		errorBox.textContent = "";
-	}
-
-	if (emptyBox) {
-		emptyBox.hidden = true;
-	}
-
-	if (tableWrapper) {
-		tableWrapper.hidden = true;
-	}
-
-	try {
-		if (!window.db) {
-			throw new Error("اتصال به Supabase برقرار نشده است.");
-		}
-
-		const {
-			data: { user },
-			error: userError
-		} = await window.db.auth.getUser();
-
-		if (userError) {
-			throw userError;
-		}
-
-		if (!user) {
-			window.location.href = "login.html";
-			return;
-		}
-
-		const {
-			data,
-			error
-		} = await window.db
-			.from("video_orders")
-			.select("*")
-			.eq("user_id", user.id)
-			.order("created_at", {
-				ascending: false
+	const insertResult =
+		await window.db
+			.from("order_files")
+			.insert({
+				order_id: orderId,
+				uploaded_by: userId,
+				file_name: file.name,
+				file_path: path,
+				file_url: fileUrl,
+				file_size: file.size,
+				mime_type:
+					file.type ||
+					"application/octet-stream"
 			});
 
-		if (error) {
-			throw error;
-		}
 
-		renderOrders(data || []);
-
-	} catch (error) {
-		console.error("LOAD ORDERS ERROR:", error);
-
-		if (loading) {
-			loading.hidden = true;
-		}
-
-		if (errorBox) {
-			errorBox.hidden = false;
-			errorBox.textContent =
-				error?.message ||
-				"دریافت سفارش‌ها با خطا مواجه شد.";
-		}
+	if (insertResult.error) {
+		return insertResult.error.message;
 	}
+
+
+	return null;
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
 
-	const refreshButton = document.getElementById("refresh-orders");
+async function createOrder(data) {
 
-	if (refreshButton) {
-		refreshButton.addEventListener("click", loadOrders);
+	if (!window.db) {
+		return {
+			ok: false,
+			error: "اتصال به Supabase برقرار نشده است."
+		};
 	}
 
-	await loadOrders();
-});
+
+	const userResult =
+		await window.db.auth.getUser();
+
+
+	if (userResult.error) {
+		return {
+			ok: false,
+			error: userResult.error.message
+		};
+	}
+
+
+	const user =
+		userResult.data?.user;
+
+
+	if (!user) {
+
+		window.location.href =
+			"login.html";
+
+		return {
+			ok: false,
+			error: "لطفاً ابتدا وارد حساب کاربری شوید."
+		};
+	}
+
+
+	/*
+		مهم:
+
+		در schema واقعی پروژه:
+		customer_id = شناسه کاربر
+
+		status هم مقدار پیش‌فرض "new" دارد،
+		پس آن را از سمت فرانت‌اند ارسال نمی‌کنیم.
+	*/
+
+	const orderPayload = {
+
+		customer_id: user.id,
+
+		title:
+			data.title,
+
+		subject:
+			data.subject,
+
+		description:
+			data.description,
+
+		estimated_duration:
+			durationMap[data.duration] ||
+			data.duration ||
+			null,
+
+		production_model:
+			data.model,
+
+		aspect_ratio:
+			data.aspectRatio ||
+			null,
+
+		output_quality:
+			data.quality ||
+			null,
+
+		video_style:
+			data.style ||
+			null,
+
+		reference_links:
+			data.links ||
+			null,
+
+		special_notes:
+			data.notes ||
+			null
+
+	};
+
+
+	console.log(
+		"CREATE ORDER PAYLOAD:",
+		orderPayload
+	);
+
+
+	const {
+		data: order,
+		error
+	} = await window.db
+		.from("video_orders")
+		.insert(orderPayload)
+		.select()
+		.single();
+
+
+	if (error) {
+
+		console.error(
+			"CREATE ORDER ERROR:",
+			error
+		);
+
+		return {
+			ok: false,
+			error:
+				error.message ||
+				"ثبت سفارش انجام نشد."
+		};
+	}
+
+
+	/*
+		آپلود فایل‌ها بعد از ایجاد موفق سفارش
+	*/
+
+	for (
+		const file of Array.from(data.files || [])
+	) {
+
+		const uploadError =
+			await uploadFile(
+				order.id,
+				user.id,
+				file
+			);
+
+
+		if (uploadError) {
+
+			return {
+				ok: false,
+				error:
+					`سفارش ثبت شد اما فایل «${file.name}» ارسال نشد: ${uploadError}`
+			};
+		}
+	}
+
+
+	return {
+		ok: true,
+		order
+	};
+}
