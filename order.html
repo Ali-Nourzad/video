@@ -2,381 +2,586 @@
 <html lang="fa" dir="rtl">
 
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<meta charset="utf-8">
+
+	<meta
+		name="viewport"
+		content="width=device-width, initial-scale=1"
+	>
 
 	<title>جزئیات سفارش | T-Choob Video</title>
 
-	<link rel="icon" href="favicon.ico">
-	<link rel="stylesheet" href="css/style.css">
+	<link
+		rel="stylesheet"
+		href="css/style.css"
+	>
+
 </head>
+
 
 <body>
 
 	<header class="site-header">
 
-		<div class="header-inner">
+		<div class="container header-inner">
 
-			<a href="index.html" class="brand">
-				<span class="brand-mark">T</span>
-				<span>T-Choob Video</span>
+			<a
+				class="brand"
+				href="index.html"
+			>
+				T-Choob Video
 			</a>
 
-			<div class="header-actions">
+
+			<nav class="nav">
 
 				<a
+					class="active"
 					href="orders.html"
-					class="header-button"
 				>
-					سفارش‌های من
+					سفارش‌ها
 				</a>
 
-				<div id="user-section"></div>
+				<a href="new-order.html">
+					ثبت سفارش
+				</a>
 
-			</div>
+				<a href="profile.html">
+					پروفایل
+				</a>
+
+				<button
+					id="logout"
+					type="button"
+				>
+					خروج
+				</button>
+
+			</nav>
+
+
+			<button
+				id="theme"
+				class="theme"
+				type="button"
+			>
+				حالت تاریک
+			</button>
 
 		</div>
 
 	</header>
 
 
+
 	<main class="page">
 
-		<section class="page-header">
-
-			<div>
-
-				<a
-					href="orders.html"
-					class="page-subtitle"
-				>
-					بازگشت به سفارش‌ها
-				</a>
-
-				<h1
-					id="page-title"
-					class="page-title"
-				>
-					جزئیات سفارش
-				</h1>
-
-				<p
-					id="page-subtitle"
-					class="page-subtitle"
-				>
-					در حال دریافت اطلاعات سفارش...
-				</p>
-
-			</div>
-
-		</section>
-
-
 		<div
-			id="order-loading"
-			class="state"
-		>
-
-			<div class="loading-spinner"></div>
-
-			<div class="state-title">
-				در حال دریافت اطلاعات
-			</div>
-
-			<p class="state-text">
-				لطفاً چند لحظه صبر کنید.
-			</p>
-
-		</div>
-
-
-		<div
-			id="order-error"
-			class="state hidden"
-		>
-
-			<div class="state-title">
-				دریافت سفارش انجام نشد
-			</div>
-
-			<p
-				id="order-error-text"
-				class="state-text"
-			></p>
-
-			<a
-				href="orders.html"
-				class="button primary"
-			>
-				بازگشت به سفارش‌ها
-			</a>
-
-		</div>
-
-
-		<div
-			id="order-content"
-			class="order-detail-grid hidden"
-		>
-
-			<section class="detail-card">
-
-				<header class="detail-card-header">
-
-					<h2>
-						اطلاعات سفارش
-					</h2>
-
-				</header>
-
-				<div class="detail-card-body">
-
-					<div class="detail-list">
-
-						<div class="detail-row">
-							<div class="detail-label">
-								عنوان
-							</div>
-
-							<div
-								id="order-title"
-								class="detail-value"
-							>
-								—
-							</div>
-						</div>
-
-
-						<div class="detail-row">
-							<div class="detail-label">
-								موضوع
-							</div>
-
-							<div
-								id="order-subject"
-								class="detail-value"
-							>
-								—
-							</div>
-						</div>
-
-
-						<div class="detail-row">
-							<div class="detail-label">
-								توضیحات
-							</div>
-
-							<div
-								id="order-description"
-								class="detail-value detail-description"
-							>
-								—
-							</div>
-						</div>
-
-
-						<div class="detail-row">
-							<div class="detail-label">
-								مدل تولید
-							</div>
-
-							<div
-								id="order-model"
-								class="detail-value"
-							>
-								—
-							</div>
-						</div>
-
-
-						<div class="detail-row">
-							<div class="detail-label">
-								مدت تقریبی
-							</div>
-
-							<div
-								id="order-duration"
-								class="detail-value"
-							>
-								—
-							</div>
-						</div>
-
-
-						<div class="detail-row">
-							<div class="detail-label">
-								نسبت تصویر
-							</div>
-
-							<div
-								id="order-aspect"
-								class="detail-value"
-							>
-								—
-							</div>
-						</div>
-
-
-						<div class="detail-row">
-							<div class="detail-label">
-								کیفیت خروجی
-							</div>
-
-							<div
-								id="order-quality"
-								class="detail-value"
-							>
-								—
-							</div>
-						</div>
-
-
-						<div class="detail-row">
-							<div class="detail-label">
-								سبک ویدئو
-							</div>
-
-							<div
-								id="order-style"
-								class="detail-value"
-							>
-								—
-							</div>
-						</div>
-
-
-						<div class="detail-row">
-							<div class="detail-label">
-								یادداشت ویژه
-							</div>
-
-							<div
-								id="order-notes"
-								class="detail-value detail-description"
-							>
-								—
-							</div>
-						</div>
-
-					</div>
-
-				</div>
-
-			</section>
-
-
-			<aside class="detail-sidebar">
-
-				<section class="detail-card">
-
-					<div class="order-status-box">
-
-						<span
-							id="order-status"
-							class="status-badge status-new"
-						>
-							جدید
-						</span>
-
-						<div
-							id="order-created"
-							class="order-status-date"
-						>
-							—
-						</div>
-
-					</div>
-
-				</section>
-
-
-				<section class="detail-card">
-
-					<header class="detail-card-header">
-
-						<h2>
-							اطلاعات تکمیلی
-						</h2>
-
-					</header>
-
-					<div class="detail-card-body">
-
-						<div class="detail-list">
-
-							<div class="detail-row">
-
-								<div class="detail-label">
-									شناسه سفارش
-								</div>
-
-								<div
-									id="order-id"
-									class="detail-value"
-								>
-									—
-								</div>
-
-							</div>
-
-							<div class="detail-row">
-
-								<div class="detail-label">
-									آخرین بروزرسانی
-								</div>
-
-								<div
-									id="order-updated"
-									class="detail-value"
-								>
-									—
-								</div>
-
-							</div>
-
-						</div>
-
-					</div>
-
-				</section>
-
-
-				<section
-					id="files-card"
-					class="detail-card hidden"
-				>
-
-					<header class="detail-card-header">
-
-						<h2>
-							فایل‌های سفارش
-						</h2>
-
-					</header>
-
-					<div class="detail-card-body">
-
-						<div
-							id="order-files"
-							class="file-list"
-						></div>
-
-					</div>
-
-				</section>
-
-			</aside>
-
-		</div>
+			class="container"
+			id="root"
+		></div>
 
 	</main>
 
 
+
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 	<script src="js/config.js"></script>
+
 	<script src="js/supabase.js"></script>
+
 	<script src="js/auth.js"></script>
-	<script src="js/order.js"></script>
+
+	<script src="js/app.js"></script>
+
+
+
+	<script>
+
+		async function loadOrder() {
+
+			const root =
+				document.getElementById("root");
+
+
+			const auth =
+				await requireUser();
+
+
+			if (!auth) {
+				return;
+			}
+
+
+			const id =
+				new URLSearchParams(
+					location.search
+				).get("id");
+
+
+			if (!id) {
+
+				root.innerHTML =
+					`
+						<div class="empty">
+							شناسه سفارش مشخص نیست.
+						</div>
+					`;
+
+				return;
+			}
+
+
+			const {
+				data: order,
+				error
+			} = await window.db
+				.from("video_orders")
+				.select("*")
+				.eq("id", id)
+				.eq(
+					"customer_id",
+					auth.user.id
+				)
+				.single();
+
+
+			if (error || !order) {
+
+				console.error(
+					"LOAD ORDER ERROR:",
+					error
+				);
+
+				root.innerHTML =
+					`
+						<div class="empty">
+							سفارش پیدا نشد.
+						</div>
+					`;
+
+				return;
+			}
+
+
+			const [
+				historyResult,
+				filesResult,
+				messagesResult
+			] = await Promise.all([
+
+				window.db
+					.from("order_status_history")
+					.select("*")
+					.eq("order_id", id)
+					.order(
+						"created_at",
+						{
+							ascending: true
+						}
+					),
+
+				window.db
+					.from("order_files")
+					.select("*")
+					.eq("order_id", id)
+					.order(
+						"created_at",
+						{
+							ascending: true
+						}
+					),
+
+				window.db
+					.from("order_messages")
+					.select("*")
+					.eq("order_id", id)
+					.order(
+						"created_at",
+						{
+							ascending: true
+						}
+					)
+
+			]);
+
+
+			root.innerHTML = `
+
+				<div class="page-head">
+
+					<div>
+
+						<span class="eyebrow">
+							${esc(order.order_number)}
+						</span>
+
+						<h1>
+							${esc(order.title)}
+						</h1>
+
+						<p class="muted">
+							${esc(order.subject)}
+						</p>
+
+					</div>
+
+
+					<span
+						class="status status-${esc(order.status)}"
+					>
+						${statusText(order.status)}
+					</span>
+
+				</div>
+
+
+
+				<div class="detail-grid">
+
+
+					<section class="panel">
+
+						<h2>
+							اطلاعات سفارش
+						</h2>
+
+
+						<div class="detail-list">
+
+							<div>
+
+								<span>
+									مدل
+								</span>
+
+								<strong>
+									${modelText(order.production_model)}
+								</strong>
+
+							</div>
+
+
+							<div>
+
+								<span>
+									مدت
+								</span>
+
+								<strong>
+									${esc(order.estimated_duration || "-")}
+								</strong>
+
+							</div>
+
+
+							<div>
+
+								<span>
+									نسبت تصویر
+								</span>
+
+								<strong>
+									${esc(order.aspect_ratio || "-")}
+								</strong>
+
+							</div>
+
+
+							<div>
+
+								<span>
+									کیفیت
+								</span>
+
+								<strong>
+									${esc(order.output_quality || "-")}
+								</strong>
+
+							</div>
+
+
+							<div>
+
+								<span>
+									سبک
+								</span>
+
+								<strong>
+									${esc(order.video_style || "-")}
+								</strong>
+
+							</div>
+
+						</div>
+
+
+						<h3>
+							توضیحات
+						</h3>
+
+						<p>
+							${esc(order.description)}
+						</p>
+
+
+						<h3>
+							توضیحات ویژه
+						</h3>
+
+						<p>
+							${esc(order.special_notes || "-")}
+						</p>
+
+					</section>
+
+
+
+					<section class="panel">
+
+						<h2>
+							تاریخچه وضعیت
+						</h2>
+
+
+						<div class="timeline">
+
+							${
+								(historyResult.data || [])
+									.map(
+										item => `
+
+											<div class="timeline-item">
+
+												<strong>
+													${statusText(item.status)}
+												</strong>
+
+												<span>
+													${date(item.created_at)}
+												</span>
+
+												<p>
+													${esc(item.note || "")}
+												</p>
+
+											</div>
+
+										`
+									)
+									.join("")
+								||
+								`
+									<p class="muted">
+										هنوز موردی ثبت نشده است.
+									</p>
+								`
+							}
+
+						</div>
+
+					</section>
+
+				</div>
+
+
+
+				<section class="panel gap">
+
+					<h2>
+						فایل‌ها
+					</h2>
+
+
+					<div class="file-list">
+
+						${
+							(filesResult.data || [])
+								.map(
+									file => `
+
+										<a
+											class="file-row"
+											href="${esc(file.file_url)}"
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+
+											<span>
+												${esc(file.file_name)}
+											</span>
+
+											<span>
+												${bytes(file.file_size)}
+											</span>
+
+										</a>
+
+									`
+								)
+								.join("")
+							||
+							`
+								<p class="muted">
+									فایلی وجود ندارد.
+								</p>
+							`
+						}
+
+					</div>
+
+				</section>
+
+
+
+				<section class="panel gap">
+
+					<h2>
+						گفتگو
+					</h2>
+
+
+					<div class="messages">
+
+						${
+							(messagesResult.data || [])
+								.map(
+									message => `
+
+										<div
+											class="bubble ${
+												message.sender_id === auth.user.id
+													? "mine"
+													: ""
+											}"
+										>
+
+											<p>
+												${esc(message.message)}
+											</p>
+
+											<time>
+												${date(message.created_at)}
+											</time>
+
+										</div>
+
+									`
+								)
+								.join("")
+							||
+							`
+								<p class="muted">
+									هنوز پیامی ثبت نشده است.
+								</p>
+							`
+						}
+
+					</div>
+
+
+
+					<form
+						id="message-form"
+						class="form"
+					>
+
+						<textarea
+							id="message-input"
+							rows="3"
+							placeholder="پیام خود را بنویسید..."
+							required
+						></textarea>
+
+
+						<button
+							class="button primary"
+							type="submit"
+						>
+							ارسال پیام
+						</button>
+
+					</form>
+
+				</section>
+
+			`;
+
+
+
+			document
+				.getElementById("message-form")
+				.addEventListener(
+					"submit",
+					async event => {
+
+						event.preventDefault();
+
+
+						const input =
+							document.getElementById(
+								"message-input"
+							);
+
+
+						const text =
+							input.value.trim();
+
+
+						if (!text) {
+							return;
+						}
+
+
+						const {
+							error
+						} = await window.db
+							.from("order_messages")
+							.insert({
+								order_id: id,
+								sender_id:
+									auth.user.id,
+								message: text
+							});
+
+
+						if (error) {
+
+							console.error(
+								"SEND MESSAGE ERROR:",
+								error
+							);
+
+							return;
+						}
+
+
+						input.value = "";
+
+						await loadOrder();
+
+					}
+				);
+
+		}
+
+
+		document.addEventListener(
+			"DOMContentLoaded",
+			loadOrder
+		);
+
+
+		document
+			.getElementById("logout")
+			.addEventListener(
+				"click",
+				logout
+			);
+
+	</script>
 
 </body>
 
