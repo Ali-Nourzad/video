@@ -10,23 +10,7 @@
 		content="width=device-width, initial-scale=1"
 	>
 
-	<title>ثبت سفارش جدید | T-Choob Video</title>
-
-	<link
-		rel="preconnect"
-		href="https://fonts.googleapis.com"
-	>
-
-	<link
-		rel="preconnect"
-		href="https://fonts.gstatic.com"
-		crossorigin
-	>
-
-	<link
-		href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"
-		rel="stylesheet"
-	>
+	<title>ثبت سفارش | T-Choob Video</title>
 
 	<link
 		rel="stylesheet"
@@ -38,77 +22,52 @@
 
 <body>
 
-
 	<header class="site-header">
 
 		<div class="container header-inner">
 
-
 			<a
-				href="index.html"
 				class="brand"
+				href="index.html"
 			>
-
-				<span>T-Choob</span>
-
-				<small>
-					Video
-				</small>
-
+				T-Choob Video
 			</a>
 
 
-			<nav class="main-nav">
+			<nav class="nav">
 
-				<a href="index.html">
-					خانه
+				<a href="orders.html">
+					سفارش‌ها
 				</a>
 
 				<a
-					href="orders.html"
 					class="active"
+					href="new-order.html"
 				>
-					سفارش‌های من
+					ثبت سفارش
 				</a>
 
 				<a href="profile.html">
 					پروفایل
 				</a>
 
-			</nav>
-
-
-			<div class="header-user">
-
-				<div
-					class="user-avatar"
-					id="header-avatar"
-				>
-					?
-				</div>
-
-
-				<div class="user-info">
-
-					<strong id="header-name">
-						در حال بارگذاری...
-					</strong>
-
-					<span id="header-email"></span>
-
-				</div>
-
-
 				<button
+					id="logout"
 					type="button"
-					class="button ghost small"
-					id="logout-button"
 				>
 					خروج
 				</button>
 
-			</div>
+			</nav>
 
+
+			<button
+				id="theme"
+				class="theme"
+				type="button"
+			>
+				حالت تاریک
+			</button>
 
 		</div>
 
@@ -118,10 +77,9 @@
 
 	<main class="page">
 
-		<div class="container">
+		<div class="container narrow">
 
-
-			<div class="page-heading">
+			<div class="page-head">
 
 				<div>
 
@@ -130,11 +88,11 @@
 					</span>
 
 					<h1>
-						ثبت سفارش جدید
+						ثبت سفارش ویدیو
 					</h1>
 
-					<p>
-						اطلاعات پروژه ویدیویی خود را وارد کنید تا سفارش ثبت شود.
+					<p class="muted">
+						اطلاعات پروژه خود را وارد کنید.
 					</p>
 
 				</div>
@@ -143,281 +101,94 @@
 
 
 
-			<section class="panel">
+			<form
+				id="form"
+				class="panel form"
+			>
 
 
-				<div class="panel-header">
+				<label>
 
-					<div>
+					نام فیلم
 
-						<h2>
-							اطلاعات پروژه
-						</h2>
+					<input
+						id="title"
+						type="text"
+						required
+						maxlength="180"
+						placeholder="نام پروژه"
+					>
 
-						<p>
-							موارد موردنیاز برای شروع پروژه را مشخص کنید.
-						</p>
-
-					</div>
-
-				</div>
-
-
-
-				<form
-					id="new-order-form"
-					class="form"
-				>
-
-
-					<div class="grid">
-
-
-						<label>
-
-							عنوان پروژه
-
-							<input
-								id="title"
-								name="title"
-								type="text"
-								placeholder="مثلاً ویدیوی معرفی محصول"
-								required
-							>
-
-						</label>
+				</label>
 
 
 
-						<label>
+				<label>
 
-							موضوع
+					موضوع
 
-							<input
-								id="subject"
-								name="subject"
-								type="text"
-								placeholder="موضوع ویدیو"
-							>
+					<input
+						id="subject"
+						type="text"
+						required
+						maxlength="250"
+						placeholder="موضوع ویدیو"
+					>
 
-						</label>
+				</label>
 
 
-					</div>
 
+				<label>
+
+					توضیحات
+
+					<textarea
+						id="description"
+						rows="6"
+						required
+						placeholder="توضیحات کامل پروژه"
+					></textarea>
+
+				</label>
+
+
+
+				<div class="grid">
 
 
 					<label>
 
-						توضیحات پروژه
+						زمان تقریبی
 
-						<textarea
-							id="description"
-							name="description"
-							rows="5"
-							placeholder="توضیح دهید ویدیو قرار است درباره چه چیزی باشد."
-						></textarea>
+						<select id="duration">
 
-					</label>
-
-
-
-					<div class="grid">
-
-
-						<label>
-
-							مدت تقریبی ویدیو
-
-							<select
-								id="estimated_duration"
-								name="estimated_duration"
-							>
-
-								<option value="">
-									انتخاب کنید
-								</option>
-
-								<option value="کمتر از ۳۰ ثانیه">
-									کمتر از ۳۰ ثانیه
-								</option>
-
-								<option value="۳۰ تا ۶۰ ثانیه">
-									۳۰ تا ۶۰ ثانیه
-								</option>
-
-								<option value="۱ تا ۳ دقیقه">
-									۱ تا ۳ دقیقه
-								</option>
-
-								<option value="۳ تا ۵ دقیقه">
-									۳ تا ۵ دقیقه
-								</option>
-
-								<option value="بیشتر از ۵ دقیقه">
-									بیشتر از ۵ دقیقه
-								</option>
-
-							</select>
-
-						</label>
-
-
-
-						<label>
-
-							مدل تولید
-
-							<select
-								id="production_model"
-								name="production_model"
-								required
-							>
-
-								<option value="">
-									انتخاب کنید
-								</option>
-
-								<option value="edit_only">
-									فقط تدوین
-								</option>
-
-								<option value="voice_ready">
-									گویندگی آماده است
-								</option>
-
-								<option value="visual_ready">
-									محتوای تصویری آماده است
-								</option>
-
-								<option value="script_ready">
-									سناریو آماده است
-								</option>
-
-								<option value="full_production">
-									تولید کامل
-								</option>
-
-							</select>
-
-						</label>
-
-
-					</div>
-
-
-
-					<div class="grid">
-
-
-						<label>
-
-							نسبت تصویر
-
-							<select
-								id="aspect_ratio"
-								name="aspect_ratio"
-							>
-
-								<option value="">
-									انتخاب کنید
-								</option>
-
-								<option value="16:9">
-									16:9
-								</option>
-
-								<option value="9:16">
-									9:16
-								</option>
-
-								<option value="1:1">
-									1:1
-								</option>
-
-								<option value="4:5">
-									4:5
-								</option>
-
-							</select>
-
-						</label>
-
-
-
-						<label>
-
-							کیفیت خروجی
-
-							<select
-								id="output_quality"
-								name="output_quality"
-							>
-
-								<option value="">
-									انتخاب کنید
-								</option>
-
-								<option value="720p">
-									720p
-								</option>
-
-								<option value="1080p">
-									1080p
-								</option>
-
-								<option value="4K">
-									4K
-								</option>
-
-							</select>
-
-						</label>
-
-
-					</div>
-
-
-
-					<label>
-
-						سبک ویدیو
-
-						<select
-							id="video_style"
-							name="video_style"
-						>
-
-							<option value="">
-								انتخاب کنید
+							<option value="30">
+								حدود ۳۰ ثانیه
 							</option>
 
-							<option value="واقع‌گرایانه">
-								واقع‌گرایانه
+							<option value="60">
+								حدود ۱ دقیقه
 							</option>
 
-							<option value="سینمایی">
-								سینمایی
+							<option value="120">
+								حدود ۲ دقیقه
 							</option>
 
-							<option value="مینیمال">
-								مینیمال
+							<option value="180">
+								حدود ۳ دقیقه
 							</option>
 
-							<option value="موشن گرافیک">
-								موشن گرافیک
+							<option value="300">
+								حدود ۵ دقیقه
 							</option>
 
-							<option value="انیمیشنی">
-								انیمیشنی
+							<option value="600">
+								حدود ۱۰ دقیقه
 							</option>
 
-							<option value="مستند">
-								مستند
-							</option>
-
-							<option value="سایر">
-								سایر
+							<option value="custom">
+								بیشتر از ۱۰ دقیقه
 							</option>
 
 						</select>
@@ -426,215 +197,59 @@
 
 
 
-					<div class="form-section">
+					<label>
 
-						<h3>
-							موارد موردنیاز
-						</h3>
+						نسبت تصویر
 
+						<select id="ratio">
 
-						<div class="check-grid">
+							<option value="16:9">
+								16:9
+							</option>
 
+							<option value="9:16">
+								9:16
+							</option>
 
-							<label class="check-card">
+							<option value="1:1">
+								1:1
+							</option>
 
-								<input
-									type="checkbox"
-									id="needs_script"
-									name="needs_script"
-								>
+							<option value="4:5">
+								4:5
+							</option>
 
-								<span>
+						</select>
 
-									<strong>
-										نگارش سناریو
-									</strong>
+					</label>
 
-									<small>
-										سناریوی ویدیو توسط تیم T-Choob تهیه شود.
-									</small>
 
-								</span>
+				</div>
 
-							</label>
 
 
-
-							<label class="check-card">
-
-								<input
-									type="checkbox"
-									id="needs_voice"
-									name="needs_voice"
-								>
-
-								<span>
-
-									<strong>
-										گویندگی
-									</strong>
-
-									<small>
-										صدای گوینده برای ویدیو نیاز دارم.
-									</small>
-
-								</span>
-
-							</label>
-
-
-
-							<label class="check-card">
-
-								<input
-									type="checkbox"
-									id="needs_visuals"
-									name="needs_visuals"
-								>
-
-								<span>
-
-									<strong>
-										تولید محتوای تصویری
-									</strong>
-
-									<small>
-										تصاویر یا ویدیوهای موردنیاز تولید شوند.
-									</small>
-
-								</span>
-
-							</label>
-
-
-
-							<label class="check-card">
-
-								<input
-									type="checkbox"
-									id="needs_editing"
-									name="needs_editing"
-									checked
-								>
-
-								<span>
-
-									<strong>
-										تدوین ویدیو
-									</strong>
-
-									<small>
-										تدوین نهایی ویدیو توسط تیم انجام شود.
-									</small>
-
-								</span>
-
-							</label>
-
-
-						</div>
-
-					</div>
-
-
-
-					<div class="form-section">
-
-						<h3>
-							مواردی که از قبل دارید
-						</h3>
-
-
-						<div class="check-grid">
-
-
-							<label class="check-card">
-
-								<input
-									type="checkbox"
-									id="has_script"
-									name="has_script"
-								>
-
-								<span>
-
-									<strong>
-										سناریو دارم
-									</strong>
-
-									<small>
-										سناریوی پروژه را از قبل آماده کرده‌ام.
-									</small>
-
-								</span>
-
-							</label>
-
-
-
-							<label class="check-card">
-
-								<input
-									type="checkbox"
-									id="has_voice"
-									name="has_voice"
-								>
-
-								<span>
-
-									<strong>
-										گویندگی دارم
-									</strong>
-
-									<small>
-										فایل صدای گوینده را در اختیار دارم.
-									</small>
-
-								</span>
-
-							</label>
-
-
-
-							<label class="check-card">
-
-								<input
-									type="checkbox"
-									id="has_visuals"
-									name="has_visuals"
-								>
-
-								<span>
-
-									<strong>
-										محتوای تصویری دارم
-									</strong>
-
-									<small>
-										تصاویر یا ویدیوهای موردنیاز را دارم.
-									</small>
-
-								</span>
-
-							</label>
-
-
-						</div>
-
-					</div>
-
+				<div class="grid">
 
 
 					<label>
 
-						لینک‌های مرجع
+						کیفیت
 
-						<textarea
-							id="reference_links"
-							name="reference_links"
-							rows="4"
-							placeholder="اگر نمونه یا لینک خاصی مدنظر دارید وارد کنید."
-						></textarea>
+						<select id="quality">
+
+							<option value="1080p">
+								1080p
+							</option>
+
+							<option value="720p">
+								720p
+							</option>
+
+							<option value="4K">
+								4K
+							</option>
+
+						</select>
 
 					</label>
 
@@ -642,72 +257,230 @@
 
 					<label>
 
-						توضیحات تکمیلی
+						سبک
 
-						<textarea
-							id="special_notes"
-							name="special_notes"
-							rows="5"
-							placeholder="هر نکته دیگری که لازم است تیم تولید بداند."
-						></textarea>
+						<select id="style">
+
+							<option value="آزاد">
+								آزاد
+							</option>
+
+							<option value="تبلیغاتی">
+								تبلیغاتی
+							</option>
+
+							<option value="آموزشی">
+								آموزشی
+							</option>
+
+							<option value="مستند">
+								مستند
+							</option>
+
+							<option value="شبکه اجتماعی">
+								شبکه اجتماعی
+							</option>
+
+							<option value="سینمایی">
+								سینمایی
+							</option>
+
+						</select>
+
+					</label>
+
+
+				</div>
+
+
+
+				<h2>
+					مدل سفارش
+				</h2>
+
+
+
+				<div class="choice-grid">
+
+
+					<label class="choice">
+
+						<input
+							type="radio"
+							name="model"
+							value="edit_only"
+							checked
+						>
+
+						<strong>
+							صوت و تصویر آماده است
+						</strong>
+
+						<small>
+							فقط تدوین
+						</small>
 
 					</label>
 
 
 
-					<div
-						id="form-message"
-						class="message"
-						hidden
-					></div>
+					<label class="choice">
 
-
-
-					<div class="form-actions">
-
-
-						<a
-							href="orders.html"
-							class="button secondary"
+						<input
+							type="radio"
+							name="model"
+							value="voice_ready"
 						>
-							انصراف
-						</a>
+
+						<strong>
+							صوت آماده است
+						</strong>
+
+						<small>
+							تصویر و تدوین
+						</small>
+
+					</label>
 
 
 
-						<button
-							type="submit"
-							class="button primary"
-							id="submit-order"
+					<label class="choice">
+
+						<input
+							type="radio"
+							name="model"
+							value="visual_ready"
 						>
-							ثبت سفارش
-						</button>
+
+						<strong>
+							تصویر آماده است
+						</strong>
+
+						<small>
+							صوت و تدوین
+						</small>
+
+					</label>
 
 
-					</div>
+
+					<label class="choice">
+
+						<input
+							type="radio"
+							name="model"
+							value="script_ready"
+						>
+
+						<strong>
+							سناریو آماده است
+						</strong>
+
+						<small>
+							صوت، تصویر و تدوین
+						</small>
+
+					</label>
 
 
-				</form>
+
+					<label class="choice">
+
+						<input
+							type="radio"
+							name="model"
+							value="full_production"
+						>
+
+						<strong>
+							هیچ‌چیز آماده نیست
+						</strong>
+
+						<small>
+							سناریو، صوت، تصویر و تدوین
+						</small>
+
+					</label>
 
 
-			</section>
+				</div>
 
+
+
+				<div
+					id="work"
+					class="tags"
+				></div>
+
+
+
+				<label>
+
+					فایل‌ها
+
+					<input
+						id="files"
+						type="file"
+						multiple
+					>
+
+					<small class="help">
+						سناریو، صوت، تصویر یا ویدیوی خام را انتخاب کنید.
+					</small>
+
+				</label>
+
+
+
+				<label>
+
+					لینک‌های مرجع
+
+					<textarea
+						id="links"
+						rows="4"
+						placeholder="لینک نمونه یا مرجع"
+					></textarea>
+
+				</label>
+
+
+
+				<label>
+
+					توضیحات ویژه
+
+					<textarea
+						id="notes"
+						rows="4"
+						placeholder="نکات مهم پروژه"
+					></textarea>
+
+				</label>
+
+
+
+				<div
+					id="msg"
+					class="message"
+				></div>
+
+
+
+				<button
+					id="submit"
+					class="button primary full"
+					type="submit"
+				>
+					ثبت سفارش
+				</button>
+
+
+			</form>
 
 		</div>
 
 	</main>
-
-
-
-	<footer class="site-footer">
-
-		<div class="container">
-
-			T-Choob Video
-
-		</div>
-
-	</footer>
 
 
 
@@ -719,210 +492,252 @@
 
 	<script src="js/auth.js"></script>
 
-	<script src="js/new-order.js"></script>
+	<script src="js/app.js"></script>
+
+	<script src="js/orders.js"></script>
 
 
 
 	<script>
 
-		document.addEventListener(
-			"DOMContentLoaded",
-			async () => {
-
-				const user =
-					await requireUser();
+		let currentUser = null;
 
 
-				if (!user) {
-					return;
+		async function initPage() {
+
+			const auth =
+				await requireUser();
+
+
+			if (!auth) {
+				return;
+			}
+
+
+			currentUser =
+				auth.user;
+
+		}
+
+
+		initPage();
+
+
+
+		function renderModel() {
+
+			const model =
+				document.querySelector(
+					'input[name="model"]:checked'
+				).value;
+
+
+			const workMap = {
+
+				edit_only: [
+					"تدوین"
+				],
+
+				voice_ready: [
+					"تصویر",
+					"تدوین"
+				],
+
+				visual_ready: [
+					"صوت",
+					"تدوین"
+				],
+
+				script_ready: [
+					"صوت",
+					"تصویر",
+					"تدوین"
+				],
+
+				full_production: [
+					"سناریو",
+					"صوت",
+					"تصویر",
+					"تدوین"
+				]
+
+			};
+
+
+			const items =
+				workMap[model] || [];
+
+
+			document.getElementById("work").innerHTML =
+				items
+					.map(
+						item =>
+							`<span>${item}</span>`
+					)
+					.join("");
+
+		}
+
+
+
+		document
+			.querySelectorAll(
+				'input[name="model"]'
+			)
+			.forEach(
+				input => {
+
+					input.addEventListener(
+						"change",
+						renderModel
+					);
+
 				}
+			);
 
 
-				const form =
-					document.getElementById(
-						"new-order-form"
-					);
-
-				const message =
-					document.getElementById(
-						"form-message"
-					);
-
-				const submitButton =
-					document.getElementById(
-						"submit-order"
-					);
+		renderModel();
 
 
-				if (!form) {
-					return;
-				}
+
+		document
+			.getElementById("logout")
+			.addEventListener(
+				"click",
+				logout
+			);
 
 
-				form.addEventListener(
-					"submit",
-					async event => {
 
-						event.preventDefault();
+		document
+			.getElementById("form")
+			.addEventListener(
+				"submit",
+				async event => {
 
-
-						message.hidden = true;
-
-						message.textContent = "";
+					event.preventDefault();
 
 
-						submitButton.disabled = true;
-
-						submitButton.textContent =
-							"در حال ثبت سفارش...";
-
-
-						const result =
-							await createOrder({
-
-								title:
-									document
-										.getElementById("title")
-										.value
-										.trim(),
-
-								subject:
-									document
-										.getElementById("subject")
-										.value
-										.trim(),
-
-								description:
-									document
-										.getElementById("description")
-										.value
-										.trim(),
-
-								estimated_duration:
-									document
-										.getElementById("estimated_duration")
-										.value,
-
-								production_model:
-									document
-										.getElementById("production_model")
-										.value,
-
-								aspect_ratio:
-									document
-										.getElementById("aspect_ratio")
-										.value,
-
-								output_quality:
-									document
-										.getElementById("output_quality")
-										.value,
-
-								video_style:
-									document
-										.getElementById("video_style")
-										.value,
-
-								needs_script:
-									document
-										.getElementById("needs_script")
-										.checked,
-
-								needs_voice:
-									document
-										.getElementById("needs_voice")
-										.checked,
-
-								needs_visuals:
-									document
-										.getElementById("needs_visuals")
-										.checked,
-
-								needs_editing:
-									document
-										.getElementById("needs_editing")
-										.checked,
-
-								has_script:
-									document
-										.getElementById("has_script")
-										.checked,
-
-								has_voice:
-									document
-										.getElementById("has_voice")
-										.checked,
-
-								has_visuals:
-									document
-										.getElementById("has_visuals")
-										.checked,
-
-								reference_links:
-									document
-										.getElementById("reference_links")
-										.value
-										.trim(),
-
-								special_notes:
-									document
-										.getElementById("special_notes")
-										.value
-										.trim()
-
-							});
-
-
-						if (!result.ok) {
-
-							message.hidden = false;
-
-							message.className =
-								"message error";
-
-							message.textContent =
-								result.error;
-
-
-							submitButton.disabled = false;
-
-							submitButton.textContent =
-								"ثبت سفارش";
-
-							return;
-						}
-
-
-						message.hidden = false;
-
-						message.className =
-							"message success";
-
-						message.textContent =
-							"سفارش با موفقیت ثبت شد.";
-
-
-						setTimeout(
-							() => {
-
-								window.location.href =
-									"order.html?id=" +
-									encodeURIComponent(
-										result.data.id
-									);
-
-							},
-							700
+					const submit =
+						document.getElementById(
+							"submit"
 						);
 
-					}
-				);
+					const msg =
+						document.getElementById(
+							"msg"
+						);
 
-			}
-		);
+
+					submit.disabled = true;
+
+					msg.className =
+						"message";
+
+					msg.textContent =
+						"در حال ثبت سفارش...";
+
+
+					const result =
+						await createOrder({
+
+							userId:
+								currentUser?.id,
+
+							title:
+								document
+									.getElementById("title")
+									.value
+									.trim(),
+
+							subject:
+								document
+									.getElementById("subject")
+									.value
+									.trim(),
+
+							description:
+								document
+									.getElementById("description")
+									.value
+									.trim(),
+
+							duration:
+								document
+									.getElementById("duration")
+									.value,
+
+							model:
+								document
+									.querySelector(
+										'input[name="model"]:checked'
+									)
+									.value,
+
+							aspectRatio:
+								document
+									.getElementById("ratio")
+									.value,
+
+							quality:
+								document
+									.getElementById("quality")
+									.value,
+
+							style:
+								document
+									.getElementById("style")
+									.value,
+
+							links:
+								document
+									.getElementById("links")
+									.value
+									.trim(),
+
+							notes:
+								document
+									.getElementById("notes")
+									.value
+									.trim(),
+
+							files:
+								document
+									.getElementById("files")
+									.files
+
+						});
+
+
+					if (!result.ok) {
+
+						msg.className =
+							"message error";
+
+						msg.textContent =
+							result.error;
+
+						submit.disabled = false;
+
+						return;
+
+					}
+
+
+					msg.className =
+						"message success";
+
+					msg.textContent =
+						"سفارش با موفقیت ثبت شد.";
+
+
+					window.location.href =
+						`order.html?id=${encodeURIComponent(result.order.id)}`;
+
+				}
+			);
 
 	</script>
-
 
 </body>
 
