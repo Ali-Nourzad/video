@@ -1,1 +1,150 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ثبت سفارش</title><link rel="stylesheet" href="css/style.css"></head><body><header class="site-header"><div class="container header-inner"><a class="brand" href="index.html">T-Choob Video</a><nav class="nav"><a href="orders.html">سفارش‌ها</a><a class="active" href="new-order.html">ثبت سفارش</a><a href="profile.html">پروفایل</a><button id="logout">خروج</button></nav><button id="theme" class="theme">حالت تاریک</button></div></header><main class="page"><div class="container narrow"><div class="page-head"><h1>ثبت سفارش ویدیو</h1></div><form id="form" class="panel form"><label>نام فیلم<input id="title" required maxlength="180"></label><label>موضوع<input id="subject" required maxlength="250"></label><label>توضیحات<textarea id="description" rows="6" required></textarea></label><div class="grid"><label>زمان تقریبی<select id="duration"><option value="30">حدود ۳۰ ثانیه</option><option value="60">حدود ۱ دقیقه</option><option value="120">حدود ۲ دقیقه</option><option value="180">حدود ۳ دقیقه</option><option value="300">حدود ۵ دقیقه</option><option value="600">حدود ۱۰ دقیقه</option><option value="custom">بیشتر از ۱۰ دقیقه</option></select></label><label>نسبت تصویر<select id="ratio"><option>16:9</option><option>9:16</option><option>1:1</option><option>4:5</option></select></label></div><div class="grid"><label>کیفیت<select id="quality"><option>1080p</option><option>720p</option><option>4K</option></select></label><label>سبک<select id="style"><option>آزاد</option><option>تبلیغاتی</option><option>آموزشی</option><option>مستند</option><option>شبکه اجتماعی</option><option>سینمایی</option></select></label></div><h2>مدل سفارش</h2><div class="choice-grid"><label class="choice"><input type="radio" name="model" value="edit_only" checked><strong>صوت و تصویر آماده است</strong><small>فقط تدوین</small></label><label class="choice"><input type="radio" name="model" value="voice_ready"><strong>صوت آماده است</strong><small>تصویر و تدوین</small></label><label class="choice"><input type="radio" name="model" value="visual_ready"><strong>تصویر آماده است</strong><small>صوت و تدوین</small></label><label class="choice"><input type="radio" name="model" value="script_ready"><strong>سناریو آماده است</strong><small>صوت، تصویر و تدوین</small></label><label class="choice"><input type="radio" name="model" value="full_production"><strong>هیچ‌چیز آماده نیست</strong><small>سناریو، صوت، تصویر و تدوین</small></label></div><div id="work" class="tags"></div><label>فایل‌ها<input id="files" type="file" multiple><small class="help">سناریو، صوت، تصویر یا ویدیوی خام را انتخاب کنید.</small></label><label>لینک‌های مرجع<textarea id="links" rows="4"></textarea></label><label>توضیحات ویژه<textarea id="notes" rows="4"></textarea></label><div id="msg" class="message"></div><button id="submit" class="button primary full">ثبت سفارش</button></form></div></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/config.js"></script><script src="js/supabase.js"></script><script src="js/auth.js"></script><script src="js/app.js"></script><script src="js/orders.js"></script><script>(async()=>{const a=await requireUser();if(!a)return;window.uid=a.user.id})();function render(){const m=document.querySelector('input[name="model"]:checked').value;const x={edit_only:["تدوین"],voice_ready:["تصویر","تدوین"],visual_ready:["صوت","تدوین"],script_ready:["صوت","تصویر","تدوین"],full_production:["سناریو","صوت","تصویر","تدوین"]}[m];work.innerHTML=x.map(v=>`<span>${v}</span>`).join("")}document.querySelectorAll('input[name="model"]').forEach(x=>x.onchange=render);render();logout.onclick=logout;form.onsubmit=async e=>{e.preventDefault();submit.disabled=true;msg.textContent="در حال ثبت سفارش...";const r=await createOrder({userId:window.uid,title:title.value.trim(),subject:subject.value.trim(),description:description.value.trim(),duration:duration.value,model:document.querySelector('input[name="model"]:checked').value,aspectRatio:ratio.value,quality:quality.value,style:style.value,links:links.value.trim(),notes:notes.value.trim(),files:files.files});if(!r.ok){msg.textContent=r.error;msg.className="message error";submit.disabled=false;return}location.href=`order.html?id=${r.order.id}`}</script></body></html>
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>سفارش‌های من | T-Choob Video</title>
+
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+	<link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+	<header class="site-header">
+		<div class="container header-inner">
+
+			<a href="index.html" class="brand">
+				<span>T-Choob</span>
+				<small>Video</small>
+			</a>
+
+			<nav class="main-nav">
+				<a href="index.html">خانه</a>
+				<a href="orders.html" class="active">سفارش‌های من</a>
+				<a href="profile.html">پروفایل</a>
+			</nav>
+
+			<div class="header-user">
+				<div class="user-avatar" id="header-avatar">?</div>
+
+				<div class="user-info">
+					<strong id="header-name">در حال بارگذاری...</strong>
+					<span id="header-email"></span>
+				</div>
+
+				<button type="button" class="button ghost small" id="logout-button">
+					خروج
+				</button>
+			</div>
+
+		</div>
+	</header>
+
+	<main class="page">
+		<div class="container">
+
+			<div class="page-heading">
+				<div>
+					<span class="eyebrow">T-Choob Video</span>
+					<h1>سفارش‌های من</h1>
+					<p>وضعیت و جزئیات سفارش‌های ویدیویی خود را مشاهده کنید.</p>
+				</div>
+
+				<a href="new-order.html" class="button primary">
+					ثبت سفارش جدید
+				</a>
+			</div>
+
+			<section class="summary-grid">
+
+				<div class="summary-card">
+					<span>همه سفارش‌ها</span>
+					<strong id="orders-count">۰</strong>
+				</div>
+
+				<div class="summary-card">
+					<span>در انتظار بررسی</span>
+					<strong id="pending-count">۰</strong>
+				</div>
+
+				<div class="summary-card">
+					<span>در حال انجام</span>
+					<strong id="processing-count">۰</strong>
+				</div>
+
+				<div class="summary-card">
+					<span>تکمیل‌شده</span>
+					<strong id="completed-count">۰</strong>
+				</div>
+
+			</section>
+
+			<section class="panel">
+
+				<div class="panel-header">
+					<div>
+						<h2>لیست سفارش‌ها</h2>
+						<p>آخرین سفارش‌های ثبت‌شده توسط شما</p>
+					</div>
+
+					<button type="button" class="button secondary" id="refresh-orders">
+						بروزرسانی
+					</button>
+				</div>
+
+				<div id="orders-loading" class="state-box">
+					در حال دریافت سفارش‌ها...
+				</div>
+
+				<div id="orders-error" class="state-box error" hidden></div>
+
+				<div id="orders-empty" class="state-box" hidden>
+					هنوز سفارشی ثبت نکرده‌اید.
+					<div style="margin-top:16px;">
+						<a href="new-order.html" class="button primary">
+							ثبت اولین سفارش
+						</a>
+					</div>
+				</div>
+
+				<div class="table-wrapper" id="orders-table-wrapper" hidden>
+					<table class="data-table">
+						<thead>
+							<tr>
+								<th>عنوان</th>
+								<th>موضوع</th>
+								<th>مدت</th>
+								<th>مدل تولید</th>
+								<th>وضعیت</th>
+								<th>تاریخ ثبت</th>
+								<th>عملیات</th>
+							</tr>
+						</thead>
+
+						<tbody id="orders-table-body"></tbody>
+					</table>
+				</div>
+
+			</section>
+
+		</div>
+	</main>
+
+	<footer class="site-footer">
+		<div class="container">
+			T-Choob Video
+		</div>
+	</footer>
+
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="js/config.js"></script>
+	<script src="js/supabase.js"></script>
+	<script src="js/auth.js"></script>
+	<script src="js/orders.js"></script>
+
+</body>
+</html>
