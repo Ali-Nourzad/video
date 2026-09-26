@@ -1,1 +1,179 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ورود</title><link rel="stylesheet" href="css/style.css"></head><body class="auth"><section class="auth-card"><a class="brand" href="index.html">T-Choob Video</a><h1>ورود به حساب</h1><p class="muted">برای مدیریت سفارش‌ها وارد شوید.</p><form id="form" class="form"><label>ایمیل<input id="email" type="email" required></label><label>رمز عبور<input id="password" type="password" required></label><div id="msg" class="message"></div><button class="button primary full">ورود</button></form><p class="auth-link">حساب ندارید؟ <a href="signup.html">ثبت‌نام</a></p></section><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/config.js"></script><script src="js/supabase.js"></script><script src="js/auth.js"></script><script>form.onsubmit=async e=>{e.preventDefault();msg.textContent="در حال ورود...";const r=await login(email.value.trim(),password.value);if(!r.ok){msg.textContent=r.error;msg.className="message error";return}location.href=r.profile?.role==="admin"?"admin.html":"orders.html"}</script></body></html>
+<!doctype html>
+<html lang="fa" dir="rtl">
+
+<head>
+
+	<meta charset="UTF-8">
+	<meta
+		name="viewport"
+		content="width=device-width, initial-scale=1.0"
+	>
+
+	<title>ورود | T-Choob Video</title>
+
+	<link
+		rel="icon"
+		href="favicon.ico"
+	>
+
+	<link
+		rel="stylesheet"
+		href="css/style.css"
+	>
+
+</head>
+
+<body class="auth-page">
+
+	<main class="auth-card">
+
+		<a
+			href="index.html"
+			class="auth-brand"
+		>
+
+			<span class="auth-logo">
+				T
+			</span>
+
+			<span class="auth-brand-name">
+				T-Choob Video
+			</span>
+
+		</a>
+
+
+		<h1 class="auth-title">
+			خوش آمدید
+		</h1>
+
+		<p class="auth-subtitle">
+			برای ورود به حساب خود اطلاعاتتان را وارد کنید.
+		</p>
+
+
+		<div
+			id="message-box"
+			class="hidden"
+		></div>
+
+
+		<div class="auth-field">
+
+			<label
+				for="login-email"
+				class="auth-label"
+			>
+				ایمیل
+			</label>
+
+			<input
+				id="login-email"
+				class="auth-input"
+				type="email"
+				placeholder="example@email.com"
+				autocomplete="email"
+			>
+
+		</div>
+
+
+		<div class="auth-field">
+
+			<label
+				for="login-password"
+				class="auth-label"
+			>
+				رمز عبور
+			</label>
+
+			<div class="password-wrapper">
+
+				<input
+					id="login-password"
+					class="auth-input"
+					type="password"
+					placeholder="رمز عبور"
+					autocomplete="current-password"
+				>
+
+				<button
+					type="button"
+					class="password-toggle"
+					onclick="togglePassword()"
+				>
+					نمایش
+				</button>
+
+			</div>
+
+		</div>
+
+
+		<button
+			id="login-btn"
+			type="button"
+			class="auth-submit"
+			onclick="handleLogin()"
+		>
+			ورود
+		</button>
+
+
+		<div class="auth-footer">
+
+			حساب کاربری ندارید؟
+
+			<a href="signup.html">
+				ساخت حساب
+			</a>
+
+		</div>
+
+
+		<div
+			class="auth-footer"
+			style="border-top:0;margin-top:0;padding-top:10px;"
+		>
+
+			<a href="index.html">
+				بازگشت به صفحه اصلی
+			</a>
+
+		</div>
+
+	</main>
+
+
+	<script>
+		function togglePassword() {
+			const input =
+				document.getElementById("login-password");
+
+			const button =
+				document.querySelector(".password-toggle");
+
+			const showing =
+				input.type === "text";
+
+			input.type =
+				showing
+					? "password"
+					: "text";
+
+			button.textContent =
+				showing
+					? "نمایش"
+					: "مخفی";
+		}
+	</script>
+
+
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="js/config.js"></script>
+	<script src="js/supabase.js"></script>
+	<script src="js/auth.js"></script>
+
+</body>
+
+</html>
