@@ -1,227 +1,144 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
-
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>سفارش‌های من | T-Choob Video</title>
 
-	<link rel="icon" href="favicon.ico">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 	<link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
 	<header class="site-header">
-
-		<div class="header-inner">
+		<div class="container header-inner">
 
 			<a href="index.html" class="brand">
-				<span class="brand-mark">T</span>
-				<span>T-Choob Video</span>
+				<span>T-Choob</span>
+				<small>Video</small>
 			</a>
 
-			<div class="header-actions">
+			<nav class="main-nav">
+				<a href="index.html">خانه</a>
+				<a href="orders.html" class="active">سفارش‌های من</a>
+				<a href="profile.html">پروفایل</a>
+			</nav>
 
-				<a href="new-order.html" class="header-button primary">
-					ثبت سفارش جدید
-				</a>
+			<div class="header-user">
+				<div class="user-avatar" id="header-avatar">?</div>
 
-				<div id="user-section"></div>
+				<div class="user-info">
+					<strong id="header-name">در حال بارگذاری...</strong>
+					<span id="header-email"></span>
+				</div>
 
+				<button type="button" class="button ghost small" id="logout-button">
+					خروج
+				</button>
 			</div>
 
 		</div>
-
 	</header>
 
-
 	<main class="page">
+		<div class="container">
 
-		<section class="page-header">
-
-			<div>
-				<h1 class="page-title">
-					سفارش‌های من
-				</h1>
-
-				<p class="page-subtitle">
-					سفارش‌های ویدئویی خود را مشاهده و پیگیری کنید.
-				</p>
-			</div>
-
-			<div class="page-header-actions">
-
-				<button
-					id="refresh-orders"
-					type="button"
-					class="button secondary"
-				>
-					بروزرسانی
-				</button>
-
-			</div>
-
-		</section>
-
-
-		<section class="orders-summary">
-
-			<div class="summary-card">
-				<div class="summary-label">
-					مجموع سفارش‌ها
-				</div>
-
-				<div
-					id="total-orders"
-					class="summary-value"
-				>
-					۰
-				</div>
-			</div>
-
-
-			<div class="summary-card">
-				<div class="summary-label">
-					در حال انجام
-				</div>
-
-				<div
-					id="active-orders"
-					class="summary-value"
-				>
-					۰
-				</div>
-			</div>
-
-
-			<div class="summary-card">
-				<div class="summary-label">
-					تکمیل‌شده
-				</div>
-
-				<div
-					id="completed-orders"
-					class="summary-value"
-				>
-					۰
-				</div>
-			</div>
-
-		</section>
-
-
-		<section class="orders-card">
-
-			<header class="orders-card-header">
-
+			<div class="page-heading">
 				<div>
-					<h2 class="orders-card-title">
-						لیست سفارش‌ها
-					</h2>
-
-					<p class="orders-card-description">
-						برای مشاهده جزئیات هر سفارش روی آن کلیک کنید.
-					</p>
+					<span class="eyebrow">T-Choob Video</span>
+					<h1>سفارش‌های من</h1>
+					<p>وضعیت و جزئیات سفارش‌های ویدیویی خود را مشاهده کنید.</p>
 				</div>
 
-			</header>
-
-
-			<div id="orders-loading" class="state">
-
-				<div class="loading-spinner"></div>
-
-				<div class="state-title">
-					در حال دریافت سفارش‌ها
-				</div>
-
-				<p class="state-text">
-					لطفاً چند لحظه صبر کنید.
-				</p>
-
-			</div>
-
-
-			<div
-				id="orders-error"
-				class="state hidden"
-			>
-
-				<div class="state-title">
-					دریافت سفارش‌ها انجام نشد
-				</div>
-
-				<p
-					id="orders-error-text"
-					class="state-text"
-				></p>
-
-				<button
-					id="retry-orders"
-					type="button"
-					class="button primary"
-				>
-					تلاش دوباره
-				</button>
-
-			</div>
-
-
-			<div
-				id="orders-empty"
-				class="state hidden"
-			>
-
-				<div class="state-title">
-					هنوز سفارشی ثبت نکرده‌اید
-				</div>
-
-				<p class="state-text">
-					اولین سفارش ویدئویی خود را ثبت کنید.
-				</p>
-
-				<a
-					href="new-order.html"
-					class="button primary"
-				>
-					ثبت سفارش
+				<a href="new-order.html" class="button primary">
+					ثبت سفارش جدید
 				</a>
-
 			</div>
 
+			<section class="summary-grid">
 
-			<div
-				id="orders-table-wrapper"
-				class="orders-table-wrap hidden"
-			>
+				<div class="summary-card">
+					<span>همه سفارش‌ها</span>
+					<strong id="orders-count">۰</strong>
+				</div>
 
-				<table class="orders-table">
+				<div class="summary-card">
+					<span>در انتظار بررسی</span>
+					<strong id="pending-count">۰</strong>
+				</div>
 
-					<thead>
+				<div class="summary-card">
+					<span>در حال انجام</span>
+					<strong id="processing-count">۰</strong>
+				</div>
 
-						<tr>
-							<th>سفارش</th>
-							<th>مدل تولید</th>
-							<th>مدت</th>
-							<th>وضعیت</th>
-							<th>تاریخ</th>
-							<th>عملیات</th>
-						</tr>
+				<div class="summary-card">
+					<span>تکمیل‌شده</span>
+					<strong id="completed-count">۰</strong>
+				</div>
 
-					</thead>
+			</section>
 
-					<tbody id="orders-table-body"></tbody>
+			<section class="panel">
 
-				</table>
+				<div class="panel-header">
+					<div>
+						<h2>لیست سفارش‌ها</h2>
+						<p>آخرین سفارش‌های ثبت‌شده توسط شما</p>
+					</div>
 
-			</div>
+					<button type="button" class="button secondary" id="refresh-orders">
+						بروزرسانی
+					</button>
+				</div>
 
-		</section>
+				<div id="orders-loading" class="state-box">
+					در حال دریافت سفارش‌ها...
+				</div>
 
+				<div id="orders-error" class="state-box error" hidden></div>
+
+				<div id="orders-empty" class="state-box" hidden>
+					هنوز سفارشی ثبت نکرده‌اید.
+					<div style="margin-top:16px;">
+						<a href="new-order.html" class="button primary">
+							ثبت اولین سفارش
+						</a>
+					</div>
+				</div>
+
+				<div class="table-wrapper" id="orders-table-wrapper" hidden>
+					<table class="data-table">
+						<thead>
+							<tr>
+								<th>عنوان</th>
+								<th>موضوع</th>
+								<th>مدت</th>
+								<th>مدل تولید</th>
+								<th>وضعیت</th>
+								<th>تاریخ ثبت</th>
+								<th>عملیات</th>
+							</tr>
+						</thead>
+
+						<tbody id="orders-table-body"></tbody>
+					</table>
+				</div>
+
+			</section>
+
+		</div>
 	</main>
 
+	<footer class="site-footer">
+		<div class="container">
+			T-Choob Video
+		</div>
+	</footer>
 
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="js/config.js"></script>
@@ -230,5 +147,4 @@
 	<script src="js/orders.js"></script>
 
 </body>
-
 </html>
