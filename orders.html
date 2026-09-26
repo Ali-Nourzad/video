@@ -1,150 +1,279 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
+
 <head>
+
 	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>سفارش‌های من | T-Choob Video</title>
 
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<meta
+		name="viewport"
+		content="width=device-width, initial-scale=1"
+	>
 
-	<link rel="stylesheet" href="css/style.css">
+	<title>سفارش‌ها | T-Choob Video</title>
+
+	<link
+		rel="stylesheet"
+		href="css/style.css"
+	>
+
 </head>
+
 
 <body>
 
 	<header class="site-header">
+
 		<div class="container header-inner">
 
-			<a href="index.html" class="brand">
-				<span>T-Choob</span>
-				<small>Video</small>
+			<a
+				class="brand"
+				href="index.html"
+			>
+				T-Choob Video
 			</a>
 
-			<nav class="main-nav">
-				<a href="index.html">خانه</a>
-				<a href="orders.html" class="active">سفارش‌های من</a>
-				<a href="profile.html">پروفایل</a>
-			</nav>
 
-			<div class="header-user">
-				<div class="user-avatar" id="header-avatar">?</div>
+			<nav class="nav">
 
-				<div class="user-info">
-					<strong id="header-name">در حال بارگذاری...</strong>
-					<span id="header-email"></span>
-				</div>
+				<a
+					class="active"
+					href="orders.html"
+				>
+					سفارش‌ها
+				</a>
 
-				<button type="button" class="button ghost small" id="logout-button">
+				<a href="new-order.html">
+					ثبت سفارش
+				</a>
+
+				<a href="profile.html">
+					پروفایل
+				</a>
+
+				<button
+					id="logout"
+					type="button"
+				>
 					خروج
 				</button>
-			</div>
+
+			</nav>
+
+
+			<button
+				id="theme"
+				class="theme"
+				type="button"
+			>
+				حالت تاریک
+			</button>
 
 		</div>
+
 	</header>
 
+
+
 	<main class="page">
+
 		<div class="container">
 
-			<div class="page-heading">
+			<div class="page-head">
+
 				<div>
-					<span class="eyebrow">T-Choob Video</span>
-					<h1>سفارش‌های من</h1>
-					<p>وضعیت و جزئیات سفارش‌های ویدیویی خود را مشاهده کنید.</p>
+
+					<span class="eyebrow">
+						T-Choob Video
+					</span>
+
+					<h1>
+						سفارش‌های من
+					</h1>
+
 				</div>
 
-				<a href="new-order.html" class="button primary">
+
+				<a
+					class="button primary"
+					href="new-order.html"
+				>
 					ثبت سفارش جدید
 				</a>
+
 			</div>
 
-			<section class="summary-grid">
 
-				<div class="summary-card">
-					<span>همه سفارش‌ها</span>
-					<strong id="orders-count">۰</strong>
-				</div>
 
-				<div class="summary-card">
-					<span>در انتظار بررسی</span>
-					<strong id="pending-count">۰</strong>
-				</div>
-
-				<div class="summary-card">
-					<span>در حال انجام</span>
-					<strong id="processing-count">۰</strong>
-				</div>
-
-				<div class="summary-card">
-					<span>تکمیل‌شده</span>
-					<strong id="completed-count">۰</strong>
-				</div>
-
-			</section>
-
-			<section class="panel">
-
-				<div class="panel-header">
-					<div>
-						<h2>لیست سفارش‌ها</h2>
-						<p>آخرین سفارش‌های ثبت‌شده توسط شما</p>
-					</div>
-
-					<button type="button" class="button secondary" id="refresh-orders">
-						بروزرسانی
-					</button>
-				</div>
-
-				<div id="orders-loading" class="state-box">
-					در حال دریافت سفارش‌ها...
-				</div>
-
-				<div id="orders-error" class="state-box error" hidden></div>
-
-				<div id="orders-empty" class="state-box" hidden>
-					هنوز سفارشی ثبت نکرده‌اید.
-					<div style="margin-top:16px;">
-						<a href="new-order.html" class="button primary">
-							ثبت اولین سفارش
-						</a>
-					</div>
-				</div>
-
-				<div class="table-wrapper" id="orders-table-wrapper" hidden>
-					<table class="data-table">
-						<thead>
-							<tr>
-								<th>عنوان</th>
-								<th>موضوع</th>
-								<th>مدت</th>
-								<th>مدل تولید</th>
-								<th>وضعیت</th>
-								<th>تاریخ ثبت</th>
-								<th>عملیات</th>
-							</tr>
-						</thead>
-
-						<tbody id="orders-table-body"></tbody>
-					</table>
-				</div>
-
-			</section>
+			<div
+				id="list"
+				class="orders"
+			></div>
 
 		</div>
+
 	</main>
 
-	<footer class="site-footer">
-		<div class="container">
-			T-Choob Video
-		</div>
-	</footer>
+
 
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 	<script src="js/config.js"></script>
+
 	<script src="js/supabase.js"></script>
+
 	<script src="js/auth.js"></script>
-	<script src="js/orders.js"></script>
+
+	<script src="js/app.js"></script>
+
+
+
+	<script>
+
+		async function loadOrders() {
+
+			const list =
+				document.getElementById("list");
+
+
+			const auth =
+				await requireUser();
+
+
+			if (!auth) {
+				return;
+			}
+
+
+			const {
+				data,
+				error
+			} = await window.db
+				.from("video_orders")
+				.select("*")
+				.eq(
+					"customer_id",
+					auth.user.id
+				)
+				.order(
+					"created_at",
+					{
+						ascending: false
+					}
+				);
+
+
+			if (error) {
+
+				console.error(
+					"LOAD ORDERS ERROR:",
+					error
+				);
+
+				list.innerHTML =
+					`
+						<div class="empty">
+							دریافت سفارش‌ها انجام نشد.
+							<br>
+							<small>
+								${esc(error.message)}
+							</small>
+						</div>
+					`;
+
+				return;
+			}
+
+
+			if (!data || !data.length) {
+
+				list.innerHTML =
+					`
+						<div class="empty">
+
+							<h2>
+								هنوز سفارشی ثبت نشده است.
+							</h2>
+
+							<a
+								class="button primary"
+								href="new-order.html"
+							>
+								ثبت سفارش
+							</a>
+
+						</div>
+					`;
+
+				return;
+			}
+
+
+			list.innerHTML =
+				data
+					.map(
+						order => `
+
+							<a
+								class="order"
+								href="order.html?id=${encodeURIComponent(order.id)}"
+							>
+
+								<div>
+
+									<small class="eyebrow">
+										${esc(order.order_number)}
+									</small>
+
+									<h2>
+										${esc(order.title)}
+									</h2>
+
+									<p>
+										${esc(order.subject)}
+									</p>
+
+								</div>
+
+
+								<div>
+
+									<span
+										class="status status-${esc(order.status)}"
+									>
+										${statusText(order.status)}
+									</span>
+
+									<p>
+										${date(order.created_at)}
+									</p>
+
+								</div>
+
+							</a>
+
+						`
+					)
+					.join("");
+
+		}
+
+
+		document.addEventListener(
+			"DOMContentLoaded",
+			loadOrders
+		);
+
+
+		document
+			.getElementById("logout")
+			.addEventListener(
+				"click",
+				logout
+			);
+
+	</script>
 
 </body>
+
 </html>
