@@ -194,6 +194,25 @@ function escapeHtml(value) {
 		}[char]));
 }
 
+async function requireUser() {
+	if (!window.db) {
+		console.error("Supabase client is not initialized.");
+		return null;
+	}
+
+	const {
+		data: { user },
+		error
+	} = await window.db.auth.getUser();
+
+	if (error || !user) {
+		window.location.href = "login.html";
+		return null;
+	}
+
+	return user;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
 	updateHeaderAuth();
 });
