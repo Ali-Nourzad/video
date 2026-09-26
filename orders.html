@@ -1,1 +1,234 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>سفارش‌ها</title><link rel="stylesheet" href="css/style.css"></head><body><header class="site-header"><div class="container header-inner"><a class="brand" href="index.html">T-Choob Video</a><nav class="nav"><a class="active" href="orders.html">سفارش‌ها</a><a href="new-order.html">ثبت سفارش</a><a href="profile.html">پروفایل</a><button id="logout">خروج</button></nav><button id="theme" class="theme">حالت تاریک</button></div></header><main class="page"><div class="container"><div class="page-head"><h1>سفارش‌های من</h1><a class="button primary" href="new-order.html">ثبت سفارش جدید</a></div><div id="list" class="orders"></div></div></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/config.js"></script><script src="js/supabase.js"></script><script src="js/auth.js"></script><script src="js/app.js"></script><script>(async()=>{const a=await requireUser();if(!a)return;const r=await supabase.from("video_orders").select("*").eq("customer_id",a.user.id).order("created_at",{ascending:false});if(r.error){list.innerHTML="<div class=empty>دریافت سفارش‌ها انجام نشد.</div>";return}list.innerHTML=r.data.length?r.data.map(o=>`<a class="order" href="order.html?id=${o.id}"><div><small class="eyebrow">${esc(o.order_number)}</small><h2>${esc(o.title)}</h2><p>${esc(o.subject)}</p></div><div><span class="status status-${esc(o.status)}">${statusText(o.status)}</span><p>${date(o.created_at)}</p></div></a>`).join(""):"<div class=empty><h2>هنوز سفارشی ثبت نشده است.</h2><a class='button primary' href='new-order.html'>ثبت سفارش</a></div>"})();logout.onclick=logout;</script></body></html>
+<!doctype html>
+<html lang="fa" dir="rtl">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<title>سفارش‌های من | T-Choob Video</title>
+
+	<link rel="icon" href="favicon.ico">
+	<link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+	<header class="site-header">
+
+		<div class="header-inner">
+
+			<a href="index.html" class="brand">
+				<span class="brand-mark">T</span>
+				<span>T-Choob Video</span>
+			</a>
+
+			<div class="header-actions">
+
+				<a href="new-order.html" class="header-button primary">
+					ثبت سفارش جدید
+				</a>
+
+				<div id="user-section"></div>
+
+			</div>
+
+		</div>
+
+	</header>
+
+
+	<main class="page">
+
+		<section class="page-header">
+
+			<div>
+				<h1 class="page-title">
+					سفارش‌های من
+				</h1>
+
+				<p class="page-subtitle">
+					سفارش‌های ویدئویی خود را مشاهده و پیگیری کنید.
+				</p>
+			</div>
+
+			<div class="page-header-actions">
+
+				<button
+					id="refresh-orders"
+					type="button"
+					class="button secondary"
+				>
+					بروزرسانی
+				</button>
+
+			</div>
+
+		</section>
+
+
+		<section class="orders-summary">
+
+			<div class="summary-card">
+				<div class="summary-label">
+					مجموع سفارش‌ها
+				</div>
+
+				<div
+					id="total-orders"
+					class="summary-value"
+				>
+					۰
+				</div>
+			</div>
+
+
+			<div class="summary-card">
+				<div class="summary-label">
+					در حال انجام
+				</div>
+
+				<div
+					id="active-orders"
+					class="summary-value"
+				>
+					۰
+				</div>
+			</div>
+
+
+			<div class="summary-card">
+				<div class="summary-label">
+					تکمیل‌شده
+				</div>
+
+				<div
+					id="completed-orders"
+					class="summary-value"
+				>
+					۰
+				</div>
+			</div>
+
+		</section>
+
+
+		<section class="orders-card">
+
+			<header class="orders-card-header">
+
+				<div>
+					<h2 class="orders-card-title">
+						لیست سفارش‌ها
+					</h2>
+
+					<p class="orders-card-description">
+						برای مشاهده جزئیات هر سفارش روی آن کلیک کنید.
+					</p>
+				</div>
+
+			</header>
+
+
+			<div id="orders-loading" class="state">
+
+				<div class="loading-spinner"></div>
+
+				<div class="state-title">
+					در حال دریافت سفارش‌ها
+				</div>
+
+				<p class="state-text">
+					لطفاً چند لحظه صبر کنید.
+				</p>
+
+			</div>
+
+
+			<div
+				id="orders-error"
+				class="state hidden"
+			>
+
+				<div class="state-title">
+					دریافت سفارش‌ها انجام نشد
+				</div>
+
+				<p
+					id="orders-error-text"
+					class="state-text"
+				></p>
+
+				<button
+					id="retry-orders"
+					type="button"
+					class="button primary"
+				>
+					تلاش دوباره
+				</button>
+
+			</div>
+
+
+			<div
+				id="orders-empty"
+				class="state hidden"
+			>
+
+				<div class="state-title">
+					هنوز سفارشی ثبت نکرده‌اید
+				</div>
+
+				<p class="state-text">
+					اولین سفارش ویدئویی خود را ثبت کنید.
+				</p>
+
+				<a
+					href="new-order.html"
+					class="button primary"
+				>
+					ثبت سفارش
+				</a>
+
+			</div>
+
+
+			<div
+				id="orders-table-wrapper"
+				class="orders-table-wrap hidden"
+			>
+
+				<table class="orders-table">
+
+					<thead>
+
+						<tr>
+							<th>سفارش</th>
+							<th>مدل تولید</th>
+							<th>مدت</th>
+							<th>وضعیت</th>
+							<th>تاریخ</th>
+							<th>عملیات</th>
+						</tr>
+
+					</thead>
+
+					<tbody id="orders-table-body"></tbody>
+
+				</table>
+
+			</div>
+
+		</section>
+
+	</main>
+
+
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="js/config.js"></script>
+	<script src="js/supabase.js"></script>
+	<script src="js/auth.js"></script>
+	<script src="js/orders.js"></script>
+
+</body>
+
+</html>
