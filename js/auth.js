@@ -1,135 +1,199 @@
-async function user() {
-	const { data } = await window.db.auth.getUser();
+"use strict";
 
-	return data?.user || null;
-}
-
-
-async function profile(id) {
-	const { data } = await window.db
-		.from("profiles")
-		.select("*")
-		.eq("id", id)
-		.single();
-
-	return data || null;
-}
-
-
-async function requireUser(admin = false) {
-	const u = await user();
-
-	if (!u) {
-		location.href = "login.html";
-		return null;
+async function getCurrentUser() {
+	if (!window.db) {
+		throw new Error("Supabase client is not initialized.");
 	}
 
-	const p = await profile(u.id);
-
-	if (!p) {
-		location.href = "login.html";
-		return null;
-	}
-
-	if (admin && p.role !== "admin") {
-		location.href = "orders.html";
-		return null;
-	}
-
-	return {
-		user: u,
-		profile: p
-	};
-}
-
-
-async function login(email, password) {
-	const { data, error } = await window.db.auth.signInWithPassword({
-		email,
-		password
-	});
+	const {
+		data: { user },
+		error
+	} = await window.db.auth.getUser();
 
 	if (error) {
-		return {
-			ok: false,
-			error: error.message
-		};
+		throw error;
 	}
 
-	return {
-		ok: true,
-		user: data.user,
-		profile: await profile(data.user.id)
-	};
+	return user;
 }
 
+async function handleLogin() {
+	const emailInput = document.getElementById("login-email");
+	const passwordInput = document.getElementById("login-password");
+	const button = document.getElementById("login-btn");
+	const message = document.getElementById("message-box");
 
-async function signup(x) {
-	const { data, error } = await window.db.auth.signUp({
-		email: x.email,
-		password: x.password,
-		options: {
-			data: {
-				first_name: x.firstName,
-				last_name: x.lastName,
-				phone: x.phone
-			}
+	const email = emailInput?.value.trim();
+	const password = passwordInput?.value;
+
+	if (!email || !password) {
+		showAuthMessage("لطفاً ایمیل و رمز عبور را وارد کنید.", "error");
+		return;
+	}
+
+	button.disabled = true;
+	button.textContent = "در حال ورود...";
+
+	try {
+		const { error } = await window.db.auth.signInWithPassword({
+			email,
+			password
+		});
+
+		if (error) {
+			throw error;
 		}
-	});
 
-	if (error) {
-		return {
-			ok: false,
-			error: error.message
-		};
+		showAuthMessage("ورود با موفقیت انجام شد.", "success");
+
+		setTimeout(() => {
+			window.location.href = "orders.html";
+		}, 500);
+
+	} catch (error) {
+		console.error("LOGIN ERROR:", error);
+
+		let text = "ورود انجام نشد.";
+
+		if (error?.message) {
+			text = error.message;
+		}
+
+		showAuthMessage(text, "error");
+
+	} finally {
+		button.disabled = false;
+		button.textContent = "ورود";
 	}
-
-	return {
-		ok: true,
-		session: data.session,
-		message: data.session
-			? "حساب ساخته شد."
-			: "حساب ساخته شد. ایمیل تأیید را بررسی کنید."
-	};
 }
 
+async function handleLogout() {
+	try {
+		if (!window.db) {
+			throw new Error("Supabase client is not initialized.");
+		}
 
-async function logout() {
-	await window.db.auth.signOut();
+		const { error } = await window.db.auth.signOut();
 
-	location.href = "index.html";
+		if (error) {
+			throw error;
+		}
+
+		window.location.href = "index.html";
+
+	} catch (error) {
+		console.error("LOGOUT ERROR:", error);
+		alert("خروج از حساب انجام نشد.");
+	}
 }
 
+function showAuthMessage(text, type = "error") {
+	const box = document.getElementById("message-box");
 
-async function saveProfile(x) {
-	const u = await user();
-
-	if (!u) {
-		return {
-			ok: false,
-			error: "نشست کاربر معتبر نیست."
-		};
+	if (!box) {
+		return;
 	}
 
-	const { error } = await window.db
-		.from("profiles")
-		.update({
-			first_name: x.firstName,
-			last_name: x.lastName,
-			phone: x.phone,
-			address: x.address,
-			updated_at: new Date().toISOString()
-		})
-		.eq("id", u.id);
-
-	if (error) {
-		return {
-			ok: false,
-			error: error.message
-		};
-	}
-
-	return {
-		ok: true
-	};
+	box.textContent = text;
+	box.className = "message " + type;
+	box.classList.remove("hidden");
 }
+
+async function updateHeaderAuth() {
+	const container = document.getElementById("user-section");
+
+	if (!container) {
+		return;
+	}
+
+	container.innerHTML = `
+		<a class="header-button primary" href="login.html">
+			ورود
+		</a>
+	`;
+
+	try {
+		const user = await getCurrentUser();
+
+		if (!user) {
+			return;
+		}
+
+		let profile = null;
+
+		try {
+			const { data } = await window.db
+				.from("profiles")
+				.select("*")
+				.eq("id", user.id)
+				.maybeSingle();
+
+			profile = data || null;
+		} catch (error) {
+			console.warn("PROFILE LOAD WARNING:", error);
+		}
+
+		const fullName =
+			profile?.first_name ||
+			profile?.username ||
+			user.email?.split("@")[0] ||
+			"کاربر";
+
+		const avatar =
+			profile?.avatar_url ||
+			"";
+
+		const avatarHTML = avatar
+			? `<img src="${escapeHtml(avatar)}" alt="">`
+			: `<span>${escapeHtml(getInitial(fullName))}</span>`;
+
+		container.innerHTML = `
+			<div class="user-menu">
+				<a href="profile.html" class="user-avatar">
+					${avatarHTML}
+				</a>
+
+				<div class="user-info">
+					<span class="user-name">${escapeHtml(fullName)}</span>
+					<span class="user-email">${escapeHtml(user.email || "")}</span>
+				</div>
+
+				<button
+					type="button"
+					class="header-button"
+					onclick="handleLogout()"
+				>
+					خروج
+				</button>
+			</div>
+		`;
+
+	} catch (error) {
+		console.error("AUTH HEADER ERROR:", error);
+	}
+}
+
+function getInitial(value) {
+	const text = String(value || "").trim();
+
+	if (!text) {
+		return "ک";
+	}
+
+	return text.charAt(0);
+}
+
+function escapeHtml(value) {
+	return String(value ?? "")
+		.replace(/[&<>"']/g, char => ({
+			"&": "&amp;",
+			"<": "&lt;",
+			">": "&gt;",
+			'"': "&quot;",
+			"'": "&#039;"
+		}[char]));
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+	updateHeaderAuth();
+});
