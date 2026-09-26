@@ -1,151 +1,281 @@
-const MAX_FILE_SIZE = 500 * 1024 * 1024;
+"use strict";
 
+let currentOrders = [];
 
-function getDurationText(value) {
-	const map = {
-		"30": "حدود ۳۰ ثانیه",
-		"60": "حدود ۱ دقیقه",
-		"120": "حدود ۲ دقیقه",
-		"180": "حدود ۳ دقیقه",
-		"300": "حدود ۵ دقیقه",
-		"600": "حدود ۱۰ دقیقه",
-		custom: "بیشتر از ۱۰ دقیقه"
-	};
+const STATUS_LABELS = {
+	new: "جدید",
+	pending: "در انتظار بررسی",
+	processing: "در حال انجام",
+	in_progress: "در حال انجام",
+	review: "در حال بررسی",
+	completed: "تکمیل شده",
+	cancelled: "لغو شده",
+	canceled: "لغو شده"
+};
 
-	return map[value] || value || "-";
+function escapeHtml(value) {
+	return String(value ?? "")
+		.replace(/[&<>"']/g, char => ({
+			"&": "&amp;",
+			"<": "&lt;",
+			">": "&gt;",
+			'"': "&quot;",
+			"'": "&#039;"
+		}[char]));
 }
 
-
-async function uploadOrderFile(orderId, userId, file, role = "source") {
-	if (!file) {
-		return {
-			ok: false,
-			error: "فایل معتبر نیست."
-		};
+function formatDate(value) {
+	if (!value) {
+		return "—";
 	}
 
-	if (file.size > MAX_FILE_SIZE) {
-		return {
-			ok: false,
-			error: `حجم فایل ${file.name} بیشتر از ۵۰۰ مگابایت است.`
-		};
+	try {
+		return new Intl.DateTimeFormat("fa-IR", {
+			dateStyle: "medium",
+			timeStyle: "short"
+		}).format(new Date(value));
+	} catch {
+		return "—";
+	}
+}
+
+function formatDuration(value) {
+	if (value === null || value === undefined || value === "") {
+		return "—";
 	}
 
-	const safeName = file.name.replace(
-		/[^\w\u0600-\u06FF.\- ]/g,
-		"_"
+	return String(value);
+}
+
+function getOrderTitle(order) {
+	return (
+		order.title ||
+		order.name ||
+		order.subject ||
+		"سفارش ویدئویی"
 	);
-
-	const path =
-		`${userId}/${orderId}/` +
-		`${crypto.randomUUID()}-${safeName}`;
-
-	const upload = await window.db
-		.storage
-		.from("video-files")
-		.upload(path, file, {
-			upsert: false
-		});
-
-	if (upload.error) {
-		return {
-			ok: false,
-			error: upload.error.message
-		};
-	}
-
-	const insert = await window.db
-		.from("order_files")
-		.insert({
-			order_id: orderId,
-			uploaded_by: userId,
-			file_name: file.name,
-			file_path: path,
-			file_url: null,
-			file_size: file.size,
-			mime_type: file.type || "application/octet-stream",
-			file_role: role
-		});
-
-	if (insert.error) {
-		await window.db
-			.storage
-			.from("video-files")
-			.remove([path]);
-
-		return {
-			ok: false,
-			error: insert.error.message
-		};
-	}
-
-	return {
-		ok: true
-	};
 }
 
+function getOrderModel(order) {
+	return (
+		order.production_model ||
+		order.model ||
+		"—"
+	);
+}
 
-async function createOrder(x) {
-	const { data: order, error } = await window.db
-		.from("video_orders")
-		.insert({
-			customer_id: x.userId,
-			title: x.title,
-			subject: x.subject,
-			description: x.description,
-			estimated_duration: getDurationText(x.duration),
-			production_model: x.model,
+function getOrderStatus(order) {
+	return String(order.status || "new").toLowerCase();
+}
 
-			has_script: !!x.hasScript,
-			has_voice: !!x.hasVoice,
-			has_visuals: !!x.hasVisuals,
+function getStatusLabel(status) {
+	return STATUS_LABELS[status] || status || "نامشخص";
+}
 
-			aspect_ratio: x.aspectRatio || null,
-			output_quality: x.quality || null,
-			video_style: x.style || null,
-			reference_links: x.links || null,
-			special_notes: x.notes || null,
+function getStatusClass(status) {
+	switch (status) {
+		case "completed":
+			return "status-completed";
 
-			status: "new"
-		})
-		.select()
-		.single();
+		case "cancelled":
+		case "canceled":
+			return "status-cancelled";
+
+		case "pending":
+			return "status-pending";
+
+		case "processing":
+		case "in_progress":
+		case "review":
+			return "status-processing";
+
+		default:
+			return "status-new";
+	}
+}
+
+function getShortId(id) {
+	if (!id) {
+		return "—";
+	}
+
+	return String(id).slice(0, 8).toUpperCase();
+}
+
+async function getUser() {
+	if (!window.db) {
+		throw new Error("اتصال به Supabase برقرار نشده است.");
+	}
+
+	const {
+		data: { user },
+		error
+	} = await window.db.auth.getUser();
 
 	if (error) {
-		console.error("CREATE ORDER ERROR:", {
-			code: error.code,
-			message: error.message,
-			details: error.details,
-			hint: error.hint
-		});
-	
-		return {
-			ok: false,
-			error: error.message
-		};
+		throw error;
 	}
 
-	const files = Array.from(x.files || []);
-
-	for (const file of files) {
-		const result = await uploadOrderFile(
-			order.id,
-			x.userId,
-			file,
-			"source"
-		);
-
-		if (!result.ok) {
-			return {
-				ok: false,
-				error:
-					`سفارش ثبت شد اما فایل «${file.name}» آپلود نشد: ${result.error}`
-			};
-		}
-	}
-
-	return {
-		ok: true,
-		order
-	};
+	return user;
 }
+
+async function loadOrders() {
+	const loading = document.getElementById("orders-loading");
+	const errorBox = document.getElementById("orders-error");
+	const errorText = document.getElementById("orders-error-text");
+	const emptyBox = document.getElementById("orders-empty");
+	const tableWrapper = document.getElementById("orders-table-wrapper");
+	const tableBody = document.getElementById("orders-table-body");
+	const refreshButton = document.getElementById("refresh-orders");
+
+	loading.classList.remove("hidden");
+	errorBox.classList.add("hidden");
+	emptyBox.classList.add("hidden");
+	tableWrapper.classList.add("hidden");
+
+	tableBody.innerHTML = "";
+
+	refreshButton.disabled = true;
+
+	try {
+		const user = await getUser();
+
+		if (!user) {
+			window.location.href = "login.html";
+			return;
+		}
+
+		const {
+			data,
+			error
+		} = await window.db
+			.from("video_orders")
+			.select("*")
+			.eq("user_id", user.id)
+			.order("created_at", {
+				ascending: false
+			});
+
+		if (error) {
+			throw error;
+		}
+
+		currentOrders = data || [];
+
+		updateSummary(currentOrders);
+
+		loading.classList.add("hidden");
+
+		if (!currentOrders.length) {
+			emptyBox.classList.remove("hidden");
+			return;
+		}
+
+		renderOrders(currentOrders);
+
+		tableWrapper.classList.remove("hidden");
+
+	} catch (error) {
+		console.error("LOAD ORDERS ERROR:", error);
+
+		loading.classList.add("hidden");
+		errorBox.classList.remove("hidden");
+
+		errorText.textContent =
+			error?.message ||
+			"خطایی هنگام دریافت سفارش‌ها رخ داد.";
+
+	} finally {
+		refreshButton.disabled = false;
+	}
+}
+
+function updateSummary(orders) {
+	const total = orders.length;
+
+	const completed = orders.filter(order => {
+		return getOrderStatus(order) === "completed";
+	}).length;
+
+	const active = orders.filter(order => {
+		const status = getOrderStatus(order);
+
+		return ![
+			"completed",
+			"cancelled",
+			"canceled"
+		].includes(status);
+	}).length;
+
+	document.getElementById("total-orders").textContent =
+		total.toLocaleString("fa-IR");
+
+	document.getElementById("active-orders").textContent =
+		active.toLocaleString("fa-IR");
+
+	document.getElementById("completed-orders").textContent =
+		completed.toLocaleString("fa-IR");
+}
+
+function renderOrders(orders) {
+	const body = document.getElementById("orders-table-body");
+
+	body.innerHTML = orders.map(order => {
+		const status = getOrderStatus(order);
+
+		return `
+			<tr>
+
+				<td>
+					<div class="order-title">
+						${escapeHtml(getOrderTitle(order))}
+					</div>
+
+					<div class="order-meta">
+						شناسه #${escapeHtml(getShortId(order.id))}
+					</div>
+				</td>
+
+				<td>
+					${escapeHtml(getOrderModel(order))}
+				</td>
+
+				<td>
+					${escapeHtml(formatDuration(order.estimated_duration))}
+				</td>
+
+				<td>
+					<span class="status-badge ${getStatusClass(status)}">
+						${escapeHtml(getStatusLabel(status))}
+					</span>
+				</td>
+
+				<td>
+					${escapeHtml(formatDate(order.created_at))}
+				</td>
+
+				<td>
+					<a
+						class="order-action"
+						href="order.html?id=${encodeURIComponent(order.id)}"
+					>
+						مشاهده جزئیات
+					</a>
+				</td>
+
+			</tr>
+		`;
+	}).join("");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+	document
+		.getElementById("refresh-orders")
+		.addEventListener("click", loadOrders);
+
+	document
+		.getElementById("retry-orders")
+		.addEventListener("click", loadOrders);
+
+	loadOrders();
+});
