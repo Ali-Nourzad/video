@@ -2,13 +2,14 @@
 
 const STATUS_LABELS = {
 	new: "جدید",
-	pending: "در انتظار بررسی",
-	processing: "در حال انجام",
-	in_progress: "در حال انجام",
 	review: "در حال بررسی",
+	approved: "تأیید شده",
+	production: "در حال تولید",
+	editing: "در حال تدوین",
+	revision: "نیازمند اصلاح",
+	ready: "آماده تحویل",
 	completed: "تکمیل شده",
-	cancelled: "لغو شده",
-	canceled: "لغو شده"
+	cancelled: "لغو شده"
 };
 
 function escapeHtml(value) {
@@ -43,16 +44,19 @@ function getStatusClass(status) {
 			return "status-completed";
 
 		case "cancelled":
-		case "canceled":
 			return "status-cancelled";
 
-		case "pending":
-			return "status-pending";
+		case "ready":
+			return "status-completed";
 
-		case "processing":
-		case "in_progress":
 		case "review":
+		case "approved":
+		case "production":
+		case "editing":
 			return "status-processing";
+
+		case "revision":
+			return "status-pending";
 
 		default:
 			return "status-new";
@@ -78,11 +82,14 @@ function setText(id, value) {
 
 function getOrderId() {
 	const params = new URLSearchParams(window.location.search);
-
 	return params.get("id");
 }
 
 async function getCurrentUser() {
+	if (!window.db) {
+		throw new Error("اتصال به Supabase برقرار نشده است.");
+	}
+
 	const {
 		data: { user },
 		error
@@ -104,9 +111,13 @@ async function loadOrder() {
 	const orderId = getOrderId();
 
 	if (!orderId) {
-		loading.classList.add("hidden");
-		errorBox.classList.remove("hidden");
-		errorText.textContent = "شناسه سفارش مشخص نشده است.";
+		loading?.classList.add("hidden");
+		errorBox?.classList.remove("hidden");
+
+		if (errorText) {
+			errorText.textContent = "شناسه سفارش مشخص نشده است.";
+		}
+
 		return;
 	}
 
@@ -125,7 +136,7 @@ async function loadOrder() {
 			.from("video_orders")
 			.select("*")
 			.eq("id", orderId)
-			.eq("user_id", user.id)
+			.eq("customer_id", user.id)
 			.maybeSingle();
 
 		if (error) {
@@ -133,30 +144,36 @@ async function loadOrder() {
 		}
 
 		if (!order) {
-			throw new Error("این سفارش پیدا نشد یا دسترسی به آن ندارید.");
+			throw new Error(
+				"این سفارش پیدا نشد یا دسترسی به آن ندارید."
+			);
 		}
 
 		renderOrder(order);
 
 		await loadOrderFiles(order.id);
 
-		loading.classList.add("hidden");
-		content.classList.remove("hidden");
+		loading?.classList.add("hidden");
+		content?.classList.remove("hidden");
 
 	} catch (error) {
 		console.error("LOAD ORDER ERROR:", error);
 
-		loading.classList.add("hidden");
-		errorBox.classList.remove("hidden");
+		loading?.classList.add("hidden");
+		errorBox?.classList.remove("hidden");
 
-		errorText.textContent =
-			error?.message ||
-			"خطایی هنگام دریافت سفارش رخ داد.";
+		if (errorText) {
+			errorText.textContent =
+				error?.message ||
+				"خطایی هنگام دریافت سفارش رخ داد.";
+		}
 	}
 }
 
 function renderOrder(order) {
-	const status = String(order.status || "new").toLowerCase();
+	const status = String(
+		order.status || "new"
+	).toLowerCase();
 
 	document.title =
 		`${order.title || "سفارش"} | T-Choob Video`;
@@ -168,12 +185,12 @@ function renderOrder(order) {
 
 	setText(
 		"page-subtitle",
-		`شناسه سفارش: ${order.id}`
+		`شناسه سفارش: ${order.order_number || order.id}`
 	);
 
 	setText(
 		"order-title",
-		order.title || order.name
+		order.title
 	);
 
 	setText(
@@ -188,7 +205,7 @@ function renderOrder(order) {
 
 	setText(
 		"order-model",
-		order.production_model || order.model
+		getProductionModelLabel(order.production_model)
 	);
 
 	setText(
@@ -218,7 +235,7 @@ function renderOrder(order) {
 
 	setText(
 		"order-id",
-		order.id
+		order.order_number || order.id
 	);
 
 	setText(
@@ -228,19 +245,51 @@ function renderOrder(order) {
 
 	setText(
 		"order-updated",
-		formatDate(order.updated_at || order.created_at)
+		formatDate(
+			order.updated_at || order.created_at
+		)
 	);
 
-	const statusElement = document.getElementById("order-status");
+	const statusElement =
+		document.getElementById("order-status");
 
-	statusElement.textContent = getStatusLabel(status);
-	statusElement.className =
-		"status-badge " + getStatusClass(status);
+	if (statusElement) {
+		statusElement.textContent =
+			getStatusLabel(status);
+
+		statusElement.className =
+			"status-badge " +
+			getStatusClass(status);
+	}
+}
+
+function getProductionModelLabel(model) {
+	const labels = {
+		edit_only:
+			"صوت و تصویر آماده؛ فقط تدوین",
+
+		voice_ready:
+			"صوت آماده؛ تصویر و تدوین",
+
+		visual_ready:
+			"تصویر آماده؛ صوت و تدوین",
+
+		script_ready:
+			"سناریو آماده؛ صوت، تصویر و تدوین",
+
+		full_production:
+			"سناریو، صوت، تصویر و تدوین"
+	};
+
+	return labels[model] || model || "—";
 }
 
 async function loadOrderFiles(orderId) {
-	const filesCard = document.getElementById("files-card");
-	const filesContainer = document.getElementById("order-files");
+	const filesCard =
+		document.getElementById("files-card");
+
+	const filesContainer =
+		document.getElementById("order-files");
 
 	try {
 		const {
@@ -255,7 +304,10 @@ async function loadOrderFiles(orderId) {
 			});
 
 		if (error) {
-			console.warn("FILES LOAD WARNING:", error);
+			console.warn(
+				"FILES LOAD WARNING:",
+				error
+			);
 			return;
 		}
 
@@ -263,72 +315,81 @@ async function loadOrderFiles(orderId) {
 			return;
 		}
 
-		filesCard.classList.remove("hidden");
+		filesCard?.classList.remove("hidden");
 
-		filesContainer.innerHTML = files.map(file => {
-			const url =
-				file.file_url ||
-				file.url ||
-				"";
+		if (!filesContainer) {
+			return;
+		}
 
-			const name =
-				file.file_name ||
-				file.name ||
-				file.file_path ||
-				"فایل سفارش";
+		filesContainer.innerHTML = files
+			.map(file => {
+				const url =
+					file.file_url || "";
 
-			if (!url) {
+				const name =
+					file.file_name ||
+					file.file_path ||
+					"فایل سفارش";
+
+				if (!url) {
+					return `
+						<div class="file-item">
+							<div>
+								<div class="file-name">
+									${escapeHtml(name)}
+								</div>
+
+								<div class="file-type">
+									فایل ثبت شده
+								</div>
+							</div>
+						</div>
+					`;
+				}
+
 				return `
-					<div class="file-item">
+					<a
+						class="file-item"
+						href="${escapeHtml(url)}"
+						target="_blank"
+						rel="noopener noreferrer"
+					>
 						<div>
 							<div class="file-name">
 								${escapeHtml(name)}
 							</div>
 
 							<div class="file-type">
-								فایل ثبت شده
+								مشاهده فایل
 							</div>
 						</div>
-					</div>
+
+						<span class="order-action">
+							مشاهده
+						</span>
+					</a>
 				`;
-			}
-
-			return `
-				<a
-					class="file-item"
-					href="${escapeHtml(url)}"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-
-					<div>
-						<div class="file-name">
-							${escapeHtml(name)}
-						</div>
-
-						<div class="file-type">
-							مشاهده فایل
-						</div>
-					</div>
-
-					<span class="order-action">
-						مشاهده
-					</span>
-
-				</a>
-			`;
-		}).join("");
+			})
+			.join("");
 
 	} catch (error) {
-		console.warn("ORDER FILES WARNING:", error);
+		console.warn(
+			"ORDER FILES WARNING:",
+			error
+		);
 	}
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-	if (!window.db) {
-		console.error("window.db is not initialized.");
-		return;
-	}
+document.addEventListener(
+	"DOMContentLoaded",
+	() => {
+		if (!window.db) {
+			console.error(
+				"window.db is not initialized."
+			);
+			return;
+		}
 
-	loadOrder();
-});
+		loadOrder();
+	}
+);
