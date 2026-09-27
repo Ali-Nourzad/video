@@ -143,7 +143,7 @@
 				.eq("id", id)
 				.eq(
 					"customer_id",
-					auth.user.id
+					auth.id
 				)
 				.single();
 
@@ -271,7 +271,10 @@
 								</span>
 
 								<strong>
-									${esc(order.estimated_duration || "-")}
+									${esc(
+										order.estimated_duration ||
+										"-"
+									)}
 								</strong>
 
 							</div>
@@ -284,7 +287,10 @@
 								</span>
 
 								<strong>
-									${esc(order.aspect_ratio || "-")}
+									${esc(
+										order.aspect_ratio ||
+										"-"
+									)}
 								</strong>
 
 							</div>
@@ -297,7 +303,10 @@
 								</span>
 
 								<strong>
-									${esc(order.output_quality || "-")}
+									${esc(
+										order.output_quality ||
+										"-"
+									)}
 								</strong>
 
 							</div>
@@ -310,7 +319,10 @@
 								</span>
 
 								<strong>
-									${esc(order.video_style || "-")}
+									${esc(
+										order.video_style ||
+										"-"
+									)}
 								</strong>
 
 							</div>
@@ -332,7 +344,10 @@
 						</h3>
 
 						<p>
-							${esc(order.special_notes || "-")}
+							${esc(
+								order.special_notes ||
+								"-"
+							)}
 						</p>
 
 					</section>
@@ -356,15 +371,22 @@
 											<div class="timeline-item">
 
 												<strong>
-													${statusText(item.status)}
+													${statusText(
+														item.status
+													)}
 												</strong>
 
 												<span>
-													${date(item.created_at)}
+													${date(
+														item.created_at
+													)}
 												</span>
 
 												<p>
-													${esc(item.note || "")}
+													${esc(
+														item.note ||
+														""
+													)}
 												</p>
 
 											</div>
@@ -404,17 +426,23 @@
 
 										<a
 											class="file-row"
-											href="${esc(file.file_url)}"
+											href="${esc(
+												file.file_url
+											)}"
 											target="_blank"
 											rel="noopener noreferrer"
 										>
 
 											<span>
-												${esc(file.file_name)}
+												${esc(
+													file.file_name
+												)}
 											</span>
 
 											<span>
-												${bytes(file.file_size)}
+												${bytes(
+													file.file_size
+												)}
 											</span>
 
 										</a>
@@ -452,18 +480,22 @@
 
 										<div
 											class="bubble ${
-												message.sender_id === auth.user.id
+												message.sender_id === auth.id
 													? "mine"
 													: ""
 											}"
 										>
 
 											<p>
-												${esc(message.message)}
+												${esc(
+													message.message
+												)}
 											</p>
 
 											<time>
-												${date(message.created_at)}
+												${date(
+													message.created_at
+												)}
 											</time>
 
 										</div>
@@ -542,7 +574,7 @@
 							.insert({
 								order_id: id,
 								sender_id:
-									auth.user.id,
+									auth.id,
 								message: text
 							});
 
@@ -578,7 +610,7 @@
 			.getElementById("logout")
 			.addEventListener(
 				"click",
-				logout
+				handleLogout
 			);
 
 	</script>
