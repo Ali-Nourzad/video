@@ -169,12 +169,33 @@ async function signup(data) {
 	}
 
 	try {
+		/*
+		 * avatar_url عمداً از سمت کاربر گرفته نمی‌شود.
+		 * برای هر حساب، آواتار اولیه بر اساس نام و نام خانوادگی
+		 * به‌صورت خودکار ساخته می‌شود.
+		 */
+		const avatarSeed = encodeURIComponent(
+			`${data.firstName || ""} ${data.lastName || ""}`.trim() || data.email
+		);
+
+		const avatarUrl =
+			`https://api.dicebear.com/9.x/initials/svg?seed=${avatarSeed}`;
+
 		const {
 			data: authData,
 			error
 		} = await window.db.auth.signUp({
 			email: data.email,
-			password: data.password
+			password: data.password,
+			options: {
+				data: {
+					first_name: data.firstName || null,
+					last_name: data.lastName || null,
+					phone: data.phone || null,
+					address: data.address || null,
+					avatar_url: avatarUrl
+				}
+			}
 		});
 
 		if (error) {
@@ -189,10 +210,16 @@ async function signup(data) {
 					.from("profiles")
 					.upsert({
 						id: user.id,
-						email: data.email,
+						email: user.email || data.email,
 						first_name: data.firstName || null,
 						last_name: data.lastName || null,
-						phone: data.phone || null
+						phone: data.phone || null,
+						address: data.address || null,
+						avatar_url: avatarUrl
+						/*
+						 * role، created_at و updated_at عمداً اینجا
+						 * ارسال نمی‌شوند؛ دیتابیس خودش مقداردهی می‌کند.
+						 */
 					}, {
 						onConflict: "id"
 					});
