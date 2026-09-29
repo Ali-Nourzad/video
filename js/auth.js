@@ -302,14 +302,16 @@ async function saveProfile(data) {
 	}
 
 	try {
-		const user = await requireUser();
+		const authData = await requireUser();
 
-		if (!user) {
+		if (!authData) {
 			return {
 				ok: false,
 				error: "لطفاً ابتدا وارد حساب شوید."
 			};
 		}
+
+		const user = authData.user;
 
 		const { error } = await window.db
 			.from("profiles")
@@ -341,7 +343,6 @@ async function saveProfile(data) {
 		};
 	}
 }
-
 
 function showAuthMessage(text, type = "error") {
 	const box = document.getElementById("message-box");
