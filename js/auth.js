@@ -130,7 +130,6 @@ async function handleLogout() {
 	return logout();
 }
 
-
 async function handleLogin() {
 	const emailInput = document.getElementById("login-email");
 	const passwordInput = document.getElementById("login-password");
@@ -155,7 +154,10 @@ async function handleLogin() {
 	}
 
 	try {
-		const { error } = await window.db.auth.signInWithPassword({
+		const {
+			data: authData,
+			error
+		} = await window.db.auth.signInWithPassword({
 			email,
 			password
 		});
@@ -164,10 +166,36 @@ async function handleLogin() {
 			throw error;
 		}
 
+		const user = authData?.user;
+
+		if (!user) {
+			throw new Error("کاربر پیدا نشد.");
+		}
+
+		/*
+		 * دریافت نقش کاربر
+		 */
+		const {
+			data: profile,
+			error: profileError
+		} = await window.db
+			.from("profiles")
+			.select("role")
+			.eq("id", user.id)
+			.maybeSingle();
+
+		if (profileError) {
+			console.error("PROFILE ROLE ERROR:", profileError);
+		}
+
 		showAuthMessage("ورود با موفقیت انجام شد.", "success");
 
 		setTimeout(() => {
-			window.location.replace("orders.html");
+			if (profile?.role === "admin") {
+				window.location.replace("admin.html");
+			} else {
+				window.location.replace("orders.html");
+			}
 		}, 400);
 
 	} catch (error) {
@@ -188,7 +216,6 @@ async function handleLogin() {
 		}
 	}
 }
-
 
 /*
  * ثبت‌نام.
