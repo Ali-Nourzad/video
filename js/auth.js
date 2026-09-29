@@ -27,10 +27,10 @@ async function getCurrentUser() {
  * بررسی نشست کاربر.
  * اگر کاربر وارد نشده باشد، به صفحه ورود می‌رود.
  */
-async function requireUser() {
+async function requireUser(adminOnly = false) {
 	if (!window.db) {
 		console.error("Supabase client is not initialized.");
-		window.location.href = "login.html";
+		window.location.replace("login.html");
 		return null;
 	}
 
@@ -40,25 +40,59 @@ async function requireUser() {
 			error
 		} = await window.db.auth.getUser();
 
-		if (error) {
-			console.error("GET USER ERROR:", error);
-			window.location.href = "login.html";
+		if (error || !user) {
+			if (error) {
+				console.error("GET USER ERROR:", error);
+			}
+
+			window.location.replace("login.html");
 			return null;
 		}
 
-		if (!user) {
-			window.location.href = "login.html";
+		const {
+			data: profile,
+			error: profileError
+		} = await window.db
+			.from("profiles")
+			.select("*")
+			.eq("id", user.id)
+			.maybeSingle();
+
+		if (profileError) {
+			console.error("PROFILE LOAD ERROR:", profileError);
+
+			return {
+				user,
+				profile: null
+			};
+		}
+
+		if (!profile) {
+			console.error("PROFILE NOT FOUND:", user.id);
+
+			return {
+				user,
+				profile: null
+			};
+		}
+
+		if (adminOnly && profile.role !== "admin") {
+			alert("دسترسی به بخش مدیریت فقط برای ادمین مجاز است.");
+			window.location.replace("orders.html");
 			return null;
 		}
 
-		return user;
+		return {
+			user,
+			profile
+		};
+
 	} catch (error) {
 		console.error("AUTH CHECK ERROR:", error);
-		window.location.href = "login.html";
+		window.location.replace("login.html");
 		return null;
 	}
 }
-
 
 /*
  * خروج از حساب.
