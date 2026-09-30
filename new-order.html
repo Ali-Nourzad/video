@@ -74,7 +74,6 @@
 	</header>
 
 
-
 	<main class="page">
 
 		<div class="container narrow">
@@ -100,12 +99,10 @@
 			</div>
 
 
-
 			<form
 				id="form"
 				class="panel form"
 			>
-
 
 				<label>
 
@@ -120,7 +117,6 @@
 					>
 
 				</label>
-
 
 
 				<label>
@@ -138,7 +134,6 @@
 				</label>
 
 
-
 				<label>
 
 					توضیحات
@@ -153,9 +148,7 @@
 				</label>
 
 
-
 				<div class="grid">
-
 
 					<label>
 
@@ -196,7 +189,6 @@
 					</label>
 
 
-
 					<label>
 
 						نسبت تصویر
@@ -223,13 +215,10 @@
 
 					</label>
 
-
 				</div>
 
 
-
 				<div class="grid">
-
 
 					<label>
 
@@ -252,7 +241,6 @@
 						</select>
 
 					</label>
-
 
 
 					<label>
@@ -289,9 +277,7 @@
 
 					</label>
 
-
 				</div>
-
 
 
 				<h2>
@@ -299,9 +285,7 @@
 				</h2>
 
 
-
 				<div class="choice-grid">
-
 
 					<label class="choice">
 
@@ -323,7 +307,6 @@
 					</label>
 
 
-
 					<label class="choice">
 
 						<input
@@ -341,7 +324,6 @@
 						</small>
 
 					</label>
-
 
 
 					<label class="choice">
@@ -363,7 +345,6 @@
 					</label>
 
 
-
 					<label class="choice">
 
 						<input
@@ -381,7 +362,6 @@
 						</small>
 
 					</label>
-
 
 
 					<label class="choice">
@@ -402,16 +382,13 @@
 
 					</label>
 
-
 				</div>
-
 
 
 				<div
 					id="work"
 					class="tags"
 				></div>
-
 
 
 				<label>
@@ -431,7 +408,6 @@
 				</label>
 
 
-
 				<label>
 
 					لینک‌های مرجع
@@ -443,7 +419,6 @@
 					></textarea>
 
 				</label>
-
 
 
 				<label>
@@ -459,12 +434,10 @@
 				</label>
 
 
-
 				<div
 					id="msg"
 					class="message"
 				></div>
-
 
 
 				<button
@@ -475,7 +448,6 @@
 					ثبت سفارش
 				</button>
 
-
 			</form>
 
 		</div>
@@ -483,19 +455,12 @@
 	</main>
 
 
-
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 	<script src="js/config.js"></script>
-
 	<script src="js/supabase.js"></script>
-
 	<script src="js/auth.js"></script>
-
 	<script src="js/app.js"></script>
-
 	<script src="js/orders.js"></script>
-
 
 
 	<script>
@@ -505,31 +470,46 @@
 
 		async function initPage() {
 
-			const auth =
+			const authData =
 				await requireUser();
 
 
-			if (!auth) {
+			if (!authData) {
 				return;
 			}
 
 
 			currentUser =
-				auth.user;
+				authData.user;
+
+
+			if (!currentUser?.id) {
+
+				console.error(
+					"CURRENT USER ID NOT FOUND"
+				);
+
+				return;
+			}
 
 		}
 
 
-		initPage();
-
-
-
 		function renderModel() {
 
-			const model =
+			const selectedModel =
 				document.querySelector(
 					'input[name="model"]:checked'
-				).value;
+				);
+
+
+			if (!selectedModel) {
+				return;
+			}
+
+
+			const model =
+				selectedModel.value;
 
 
 			const workMap = {
@@ -572,12 +552,11 @@
 				items
 					.map(
 						item =>
-							`<span>${item}</span>`
+							`<span>${esc(item)}</span>`
 					)
 					.join("");
 
 		}
-
 
 
 		document
@@ -599,14 +578,25 @@
 		renderModel();
 
 
+		document.addEventListener(
+			"DOMContentLoaded",
+			() => {
 
-		document
-			.getElementById("logout")
-			.addEventListener(
-				"click",
-				logout
-			);
+				const logoutButton =
+					document.getElementById("logout");
 
+
+				if (logoutButton) {
+
+					logoutButton.addEventListener(
+						"click",
+						logout
+					);
+
+				}
+
+			}
+		);
 
 
 		document
@@ -629,6 +619,19 @@
 						);
 
 
+					if (!currentUser?.id) {
+
+						msg.className =
+							"message error";
+
+						msg.textContent =
+							"نشست کاربری معتبر نیست. لطفاً دوباره وارد شوید.";
+
+						return;
+
+					}
+
+
 					submit.disabled = true;
 
 					msg.className =
@@ -638,104 +641,129 @@
 						"در حال ثبت سفارش...";
 
 
-					const result =
-						await createOrder({
+					try {
 
-							userId:
-								currentUser?.id,
+						const result =
+							await createOrder({
 
-							title:
-								document
-									.getElementById("title")
-									.value
-									.trim(),
+								userId:
+									currentUser.id,
 
-							subject:
-								document
-									.getElementById("subject")
-									.value
-									.trim(),
+								title:
+									document
+										.getElementById("title")
+										.value
+										.trim(),
 
-							description:
-								document
-									.getElementById("description")
-									.value
-									.trim(),
+								subject:
+									document
+										.getElementById("subject")
+										.value
+										.trim(),
 
-							duration:
-								document
-									.getElementById("duration")
-									.value,
+								description:
+									document
+										.getElementById("description")
+										.value
+										.trim(),
 
-							model:
-								document
-									.querySelector(
-										'input[name="model"]:checked'
-									)
-									.value,
+								duration:
+									document
+										.getElementById("duration")
+										.value,
 
-							aspectRatio:
-								document
-									.getElementById("ratio")
-									.value,
+								model:
+									document
+										.querySelector(
+											'input[name="model"]:checked'
+										)
+										.value,
 
-							quality:
-								document
-									.getElementById("quality")
-									.value,
+								aspectRatio:
+									document
+										.getElementById("ratio")
+										.value,
 
-							style:
-								document
-									.getElementById("style")
-									.value,
+								quality:
+									document
+										.getElementById("quality")
+										.value,
 
-							links:
-								document
-									.getElementById("links")
-									.value
-									.trim(),
+								style:
+									document
+										.getElementById("style")
+										.value,
 
-							notes:
-								document
-									.getElementById("notes")
-									.value
-									.trim(),
+								links:
+									document
+										.getElementById("links")
+										.value
+										.trim(),
 
-							files:
-								document
-									.getElementById("files")
-									.files
+								notes:
+									document
+										.getElementById("notes")
+										.value
+										.trim(),
 
-						});
+								files:
+									document
+										.getElementById("files")
+										.files
+
+							});
 
 
-					if (!result.ok) {
+						if (!result.ok) {
+
+							msg.className =
+								"message error";
+
+							msg.textContent =
+								result.error;
+
+							submit.disabled = false;
+
+							return;
+
+						}
+
+
+						msg.className =
+							"message success";
+
+						msg.textContent =
+							"سفارش با موفقیت ثبت شد.";
+
+
+						window.location.href =
+							`order.html?id=${encodeURIComponent(
+								result.order.id
+							)}`;
+
+					} catch (error) {
+
+						console.error(
+							"CREATE ORDER PAGE ERROR:",
+							error
+						);
 
 						msg.className =
 							"message error";
 
 						msg.textContent =
-							result.error;
+							error?.message ||
+							"ثبت سفارش انجام نشد.";
 
 						submit.disabled = false;
 
-						return;
-
 					}
-
-
-					msg.className =
-						"message success";
-
-					msg.textContent =
-						"سفارش با موفقیت ثبت شد.";
-
-
-					window.location.href =
-						`order.html?id=${encodeURIComponent(result.order.id)}`;
 
 				}
 			);
+
+
+		initPage();
 
 	</script>
 
