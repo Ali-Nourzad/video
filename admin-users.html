@@ -17,6 +17,80 @@
 		href="css/style.css"
 	>
 
+	<style>
+
+		.admin-users-page {
+			padding-bottom: 50px;
+		}
+
+		.admin-users-head {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 15px;
+			margin-bottom: 22px;
+		}
+
+		.admin-users-head h1 {
+			margin: 5px 0 0;
+		}
+
+		.admin-users-actions {
+			display: flex;
+			gap: 9px;
+		}
+
+		.admin-users-panel {
+			padding: 0;
+			overflow: hidden;
+		}
+
+		.admin-user-row:hover {
+			background: rgba(127,127,127,.05);
+		}
+
+		.admin-user-name {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			min-width: 150px;
+		}
+
+		.admin-user-avatar {
+			width: 36px;
+			height: 36px;
+			border-radius: 50%;
+			object-fit: cover;
+			background: rgba(127,127,127,.1);
+		}
+
+		.admin-role {
+			display: inline-flex;
+			padding: 5px 9px;
+			border-radius: 999px;
+			font-size: 12px;
+			background: rgba(127,127,127,.1);
+		}
+
+		@media (max-width: 600px) {
+
+			.admin-users-head {
+				align-items: flex-start;
+				flex-direction: column;
+			}
+
+			.admin-users-actions {
+				width: 100%;
+			}
+
+			.admin-users-actions .button {
+				flex: 1;
+			}
+
+		}
+
+	</style>
+
 </head>
 
 
@@ -70,28 +144,49 @@
 	</header>
 
 
-	<main class="page">
+	<main class="page admin-users-page">
 
 		<div class="container">
 
-			<div class="page-head">
 
-				<h1>
-					کاربران
-				</h1>
+			<div class="admin-users-head">
 
-				<button
-					type="button"
-					id="refresh"
-					class="button secondary"
-				>
-					بروزرسانی
-				</button>
+				<div>
+
+					<span class="eyebrow">
+						پنل مدیریت
+					</span>
+
+					<h1>
+						کاربران
+					</h1>
+
+				</div>
+
+
+				<div class="admin-users-actions">
+
+					<a
+						class="button secondary"
+						href="admin.html"
+					>
+						مشاهده سفارشات
+					</a>
+
+					<button
+						type="button"
+						id="refresh"
+						class="button primary"
+					>
+						بروزرسانی
+					</button>
+
+				</div>
 
 			</div>
 
 
-			<section class="panel">
+			<section class="panel admin-users-panel">
 
 				<div class="table-wrap">
 
@@ -100,12 +195,31 @@
 						<thead>
 
 							<tr>
-								<th>نام</th>
-								<th>ایمیل</th>
-								<th>تلفن</th>
-								<th>نقش</th>
-								<th>عضویت</th>
-								<th>عملیات</th>
+
+								<th>
+									کاربر
+								</th>
+
+								<th>
+									ایمیل
+								</th>
+
+								<th>
+									تلفن
+								</th>
+
+								<th>
+									نقش
+								</th>
+
+								<th>
+									عضویت
+								</th>
+
+								<th>
+									عملیات
+								</th>
+
 							</tr>
 
 						</thead>
@@ -118,6 +232,7 @@
 				</div>
 
 			</section>
+
 
 		</div>
 
@@ -134,34 +249,40 @@
 
 
 	<script>
+
 		document.addEventListener("DOMContentLoaded", () => {
 
-			const logoutButton =
+			const logout =
 				document.getElementById("logout");
 
-			const refreshButton =
+			const refresh =
 				document.getElementById("refresh");
 
 
-			if (logoutButton) {
-				logoutButton.addEventListener(
+			if (logout) {
+
+				logout.addEventListener(
 					"click",
-					logout
+					window.logout
 				);
+
 			}
 
 
-			if (refreshButton) {
-				refreshButton.addEventListener(
+			if (refresh) {
+
+				refresh.addEventListener(
 					"click",
 					adminUsers
 				);
+
 			}
 
 
 			adminUsers();
 
 		});
+
 	</script>
 
 </body>
