@@ -1,19 +1,20 @@
 "use strict";
 
 
-/*
- * Admin panel
- * مدیریت سفارشات، کاربران، جزئیات سفارش و چت ادمین
- */
-
+/* ==================================================
+   ADMIN STATE
+================================================== */
 
 let adminOrdersData = [];
+
 let adminCurrentFilter = "all";
 
+let adminMessageChannel = null;
 
-/* --------------------------------------------------
-   ابزارهای کمکی
--------------------------------------------------- */
+
+/* ==================================================
+   HELPERS
+================================================== */
 
 function adminEsc(value) {
 
@@ -46,11 +47,12 @@ function adminDate(value) {
 			}
 		);
 
-	} catch (error) {
+	} catch {
 
 		return value;
 
 	}
+
 }
 
 
@@ -58,21 +60,22 @@ function adminModelText(value) {
 
 	const models = {
 
-		"full": "تولید کامل",
+		full: "تولید کامل",
 
-		"script": "اسکریپت",
+		script: "اسکریپت",
 
-		"voice": "گویندگی",
+		voice: "گویندگی",
 
-		"editing": "تدوین",
+		editing: "تدوین",
 
-		"animation": "انیمیشن",
+		animation: "انیمیشن",
 
-		"motion": "موشن گرافیک"
+		motion: "موشن گرافیک"
 
 	};
 
 	return models[value] || value || "-";
+
 }
 
 
@@ -80,27 +83,28 @@ function adminStatusText(value) {
 
 	const statuses = {
 
-		"new": "جدید",
+		new: "جدید",
 
-		"review": "در حال بررسی",
+		review: "در حال بررسی",
 
-		"approved": "تأیید شده",
+		approved: "تأیید شده",
 
-		"production": "در حال تولید",
+		production: "در حال تولید",
 
-		"editing": "در حال تدوین",
+		editing: "در حال تدوین",
 
-		"revision": "نیازمند اصلاح",
+		revision: "نیازمند اصلاح",
 
-		"ready": "آماده تحویل",
+		ready: "آماده تحویل",
 
-		"completed": "تکمیل شده",
+		completed: "تکمیل شده",
 
-		"cancelled": "لغو شده"
+		cancelled: "لغو شده"
 
 	};
 
 	return statuses[value] || value || "-";
+
 }
 
 
@@ -108,33 +112,19 @@ function adminPaymentText(value) {
 
 	const payments = {
 
-		"pending": "در انتظار پرداخت",
+		pending: "در انتظار پرداخت",
 
-		"unpaid": "پرداخت نشده",
+		unpaid: "پرداخت نشده",
 
-		"paid": "پرداخت شده",
+		paid: "پرداخت شده",
 
-		"partial": "پرداخت ناقص",
+		partial: "پرداخت ناقص",
 
-		"refunded": "بازپرداخت شده"
+		refunded: "بازپرداخت شده"
 
 	};
 
 	return payments[value] || value || "-";
-}
-
-
-function adminProgressStatus(status) {
-
-	return [
-		"new",
-		"review",
-		"approved",
-		"production",
-		"editing",
-		"revision",
-		"ready"
-	].includes(status);
 
 }
 
@@ -149,45 +139,62 @@ function adminCustomerName(profile) {
 		`${profile.first_name || ""} ${profile.last_name || ""}`.trim();
 
 	return name || "بدون نام";
+
 }
 
 
-/* --------------------------------------------------
-   فیلتر سفارشات
--------------------------------------------------- */
+function adminIsProgress(status) {
 
-function adminFilterMatches(order, filter) {
+	return [
+		"new",
+		"review",
+		"approved",
+		"production",
+		"editing",
+		"revision",
+		"ready"
+	].includes(status);
 
-	if (filter === "all") {
-		return true;
-	}
-
-	if (filter === "completed") {
-		return order.status === "completed";
-	}
-
-	if (filter === "cancelled") {
-		return order.status === "cancelled";
-	}
-
-	if (filter === "progress") {
-		return adminProgressStatus(order.status);
-	}
-
-	return true;
 }
 
+
+/* ==================================================
+   ORDER FILTER
+================================================== */
 
 function adminSetOrderFilter(filter) {
 
-	adminCurrentFilter = filter || "all";
+	adminCurrentFilter =
+		filter || "all";
 
 	adminRenderOrders();
 
 }
 
 
-window.adminSetOrderFilter = adminSetOrderFilter;
+window.adminSetOrderFilter =
+	adminSetOrderFilter;
+
+
+function adminFilterOrder(order) {
+
+	switch (adminCurrentFilter) {
+
+		case "progress":
+			return adminIsProgress(order.status);
+
+		case "completed":
+			return order.status === "completed";
+
+		case "cancelled":
+			return order.status === "cancelled";
+
+		default:
+			return true;
+
+	}
+
+}
 
 
 function adminRenderOrders() {
@@ -200,13 +207,9 @@ function adminRenderOrders() {
 	}
 
 
-	const filtered =
+	const orders =
 		adminOrdersData.filter(
-			order =>
-				adminFilterMatches(
-					order,
-					adminCurrentFilter
-				)
+			adminFilterOrder
 		);
 
 
@@ -214,33 +217,34 @@ function adminRenderOrders() {
 		document.getElementById("orders-title");
 
 
+	const titles = {
+
+		all: "همه سفارشات",
+
+		progress: "سفارشات در جریان",
+
+		completed: "سفارشات تکمیل شده",
+
+		cancelled: "سفارشات لغو شده"
+
+	};
+
+
 	if (title) {
-
-		const titles = {
-
-			all: "همه سفارشات",
-
-			progress: "سفارشات در جریان",
-
-			completed: "سفارشات تکمیل شده",
-
-			cancelled: "سفارشات لغو شده"
-
-		};
 
 		title.textContent =
 			titles[adminCurrentFilter] ||
-			"همه سفارشات";
+			titles.all;
 
 	}
 
 
-	if (!filtered.length) {
+	if (!orders.length) {
 
 		body.innerHTML = `
 			<tr>
 				<td colspan="7">
-					<div class="empty">
+					<div class="admin-empty">
 						سفارشی در این بخش وجود ندارد.
 					</div>
 				</td>
@@ -253,148 +257,198 @@ function adminRenderOrders() {
 
 
 	body.innerHTML =
-		filtered
-			.map(order => {
+		orders.map(order => {
 
-				const profile =
-					order.profiles || {};
+			const profile =
+				order.profiles || {};
 
-				const customer =
-					adminCustomerName(profile);
+			const customer =
+				adminCustomerName(profile);
 
 
-				return `
-					<tr class="order-row">
+			return `
 
-						<td>
-							<span class="order-number">
-								${adminEsc(order.order_number)}
-							</span>
-						</td>
+				<tr class="admin-order-row">
 
-						<td class="order-title-cell">
+					<td>
+
+						<span class="admin-order-number">
+							${adminEsc(order.order_number)}
+						</span>
+
+					</td>
+
+
+					<td>
+
+						<div class="admin-order-title">
 							${adminEsc(order.title)}
-						</td>
+						</div>
 
-						<td class="order-customer-cell">
-							${adminEsc(customer)}
-						</td>
+					</td>
 
-						<td>
-							${adminEsc(
-								adminModelText(
-									order.production_model
-								)
-							)}
-						</td>
 
-						<td>
-							<span
-								class="status status-${adminEsc(order.status)}"
-							>
-								${adminEsc(
-									adminStatusText(order.status)
-								)}
+					<td>
+
+						<div class="admin-customer">
+
+							${
+								profile.avatar_url
+									? `
+										<img
+											class="admin-avatar"
+											src="${adminEsc(profile.avatar_url)}"
+											alt=""
+										>
+									`
+									: `
+										<div class="admin-avatar"></div>
+									`
+							}
+
+							<span>
+								${adminEsc(customer)}
 							</span>
-						</td>
 
-						<td>
-							${adminDate(order.created_at)}
-						</td>
+						</div>
 
-						<td>
-							<a
-								class="button secondary"
-								href="admin-order.html?id=${encodeURIComponent(order.id)}"
-							>
-								مشاهده
-							</a>
-						</td>
+					</td>
 
-					</tr>
-				`;
 
-			})
-			.join("");
+					<td>
+						${adminEsc(
+							adminModelText(
+								order.production_model
+							)
+						)}
+					</td>
+
+
+					<td>
+
+						<span
+							class="status status-${adminEsc(order.status)}"
+						>
+							${adminEsc(
+								adminStatusText(order.status)
+							)}
+						</span>
+
+					</td>
+
+
+					<td>
+						${adminDate(order.created_at)}
+					</td>
+
+
+					<td>
+
+						<a
+							class="button secondary"
+							href="admin-order.html?id=${encodeURIComponent(order.id)}"
+						>
+							مشاهده
+						</a>
+
+					</td>
+
+				</tr>
+
+			`;
+
+		}).join("");
 
 }
 
 
-function adminUpdateCounts(data) {
+/* ==================================================
+   ORDER COUNTS
+================================================== */
 
-	const total =
-		data.length;
+function adminUpdateOrderCounts(data) {
 
 	const progress =
 		data.filter(
-			x => adminProgressStatus(x.status)
+			order =>
+				adminIsProgress(order.status)
 		).length;
 
 	const completed =
 		data.filter(
-			x => x.status === "completed"
+			order =>
+				order.status === "completed"
 		).length;
 
 	const cancelled =
 		data.filter(
-			x => x.status === "cancelled"
+			order =>
+				order.status === "cancelled"
 		).length;
-
 
 	const newOrders =
 		data.filter(
-			x => x.status === "new"
+			order =>
+				order.status === "new"
 		).length;
 
 	const ready =
 		data.filter(
-			x => x.status === "ready"
+			order =>
+				order.status === "ready"
 		).length;
 
 
-	const setText = (id, value) => {
+	const set =
+		(id, value) => {
 
-		const element =
-			document.getElementById(id);
+			const element =
+				document.getElementById(id);
 
-		if (element) {
-			element.textContent = value;
-		}
+			if (element) {
+				element.textContent = value;
+			}
 
-	};
+		};
 
 
-	setText("total", total);
-	setText("new", newOrders);
-	setText("progress", progress);
-	setText("ready", ready);
+	set("total", data.length);
 
-	setText("count-all", total);
-	setText("count-progress", progress);
-	setText("count-completed", completed);
-	setText("count-cancelled", cancelled);
+	set("new", newOrders);
+
+	set("progress", progress);
+
+	set("ready", ready);
+
+	set("count-all", data.length);
+
+	set("count-progress", progress);
+
+	set("count-completed", completed);
+
+	set("count-cancelled", cancelled);
 
 }
 
 
-/* --------------------------------------------------
-   لیست سفارشات
--------------------------------------------------- */
+/* ==================================================
+   ADMIN ORDERS
+================================================== */
 
 async function adminOrders() {
 
-	const authData =
+	const auth =
 		await requireUser(true);
 
-
-	if (!authData) {
+	if (!auth) {
 		return;
 	}
 
 
 	const body =
-		document.getElementById("orders-body");
-
+		document.getElementById(
+			"orders-body"
+		);
 
 	if (!body) {
 		return;
@@ -448,12 +502,10 @@ async function adminOrders() {
 
 
 	adminOrdersData =
-		Array.isArray(data)
-			? data
-			: [];
+		data || [];
 
 
-	adminUpdateCounts(
+	adminUpdateOrderCounts(
 		adminOrdersData
 	);
 
@@ -463,28 +515,37 @@ async function adminOrders() {
 }
 
 
-/* --------------------------------------------------
-   کاربران
--------------------------------------------------- */
+/* ==================================================
+   ADMIN USERS
+================================================== */
 
 async function adminUsers() {
 
-	const authData =
+	const auth =
 		await requireUser(true);
 
-
-	if (!authData) {
+	if (!auth) {
 		return;
 	}
 
 
 	const body =
-		document.getElementById("users-body");
-
+		document.getElementById(
+			"users-body"
+		);
 
 	if (!body) {
 		return;
 	}
+
+
+	body.innerHTML = `
+		<tr>
+			<td colspan="6">
+				در حال دریافت کاربران...
+			</td>
+		</tr>
+	`;
 
 
 	const {
@@ -509,8 +570,13 @@ async function adminUsers() {
 		);
 
 
-		body.innerHTML =
-			"<tr><td colspan='6'>دریافت کاربران انجام نشد.</td></tr>";
+		body.innerHTML = `
+			<tr>
+				<td colspan="6">
+					دریافت کاربران انجام نشد.
+				</td>
+			</tr>
+		`;
 
 		return;
 
@@ -518,63 +584,673 @@ async function adminUsers() {
 
 
 	body.innerHTML =
-		(data || [])
-			.map(user => {
+		(data || []).map(user => {
 
-				const name =
-					adminCustomerName(user);
+			const name =
+				adminCustomerName(user);
 
 
-				return `
-					<tr>
+			return `
 
-						<td>
-							${adminEsc(name)}
-						</td>
+				<tr class="admin-user-row">
 
-						<td>
-							${adminEsc(user.email || "-")}
-						</td>
+					<td>
 
-						<td>
-							${adminEsc(user.phone || "-")}
-						</td>
+						<div class="admin-user-name">
 
-						<td>
+							${
+								user.avatar_url
+									? `
+										<img
+											class="admin-user-avatar"
+											src="${adminEsc(user.avatar_url)}"
+											alt=""
+										>
+									`
+									: `
+										<div class="admin-user-avatar"></div>
+									`
+							}
+
+							<strong>
+								${adminEsc(name)}
+							</strong>
+
+						</div>
+
+					</td>
+
+
+					<td>
+						${adminEsc(user.email || "-")}
+					</td>
+
+
+					<td>
+						${adminEsc(user.phone || "-")}
+					</td>
+
+
+					<td>
+
+						<span class="admin-role">
 							${adminEsc(user.role || "-")}
-						</td>
+						</span>
 
-						<td>
-							${adminDate(user.created_at)}
-						</td>
+					</td>
 
-						<td>
-							<a
-								class="button secondary"
-								href="admin-order.html?customer=${encodeURIComponent(user.id)}"
-							>
-								ثبت سفارش
-							</a>
-						</td>
 
-					</tr>
-				`;
+					<td>
+						${adminDate(user.created_at)}
+					</td>
 
-			})
-			.join("");
+
+					<td>
+
+						<a
+							class="button secondary"
+							href="admin-order.html?customer=${encodeURIComponent(user.id)}"
+						>
+							ثبت سفارش
+						</a>
+
+					</td>
+
+				</tr>
+
+			`;
+
+		}).join("");
 
 
 }
 
 
-/* --------------------------------------------------
-   اطلاعات کامل سفارش
--------------------------------------------------- */
+/* ==================================================
+   LOAD CUSTOMER
+================================================== */
+
+async function adminLoadCustomer(customerId) {
+
+	const {
+		data,
+		error
+	} = await window.db
+		.from("profiles")
+		.select("*")
+		.eq(
+			"id",
+			customerId
+		)
+		.single();
+
+
+	if (error) {
+
+		console.error(
+			"LOAD CUSTOMER ERROR:",
+			error
+		);
+
+		return null;
+
+	}
+
+
+	return data;
+
+}
+
+
+/* ==================================================
+   CREATE ORDER PAGE
+================================================== */
+
+async function adminRenderCreateOrder(
+	customer,
+	root
+) {
+
+	const name =
+		adminCustomerName(customer);
+
+
+	root.innerHTML = `
+
+		<div class="admin-order-page">
+
+
+			<div class="admin-order-header">
+
+				<div>
+
+					<span class="eyebrow">
+						ثبت سفارش جدید
+					</span>
+
+					<h1>
+						ثبت سفارش برای مشتری
+					</h1>
+
+				</div>
+
+
+				<div class="admin-order-actions">
+
+					<a
+						class="button secondary"
+						href="admin-users.html"
+					>
+						بازگشت به کاربران
+					</a>
+
+				</div>
+
+			</div>
+
+
+			<section class="panel admin-card">
+
+
+				<div class="admin-card-title">
+
+					<h2>
+						اطلاعات سفارش
+					</h2>
+
+				</div>
+
+
+				<div class="admin-create-customer">
+
+					<strong>
+						${adminEsc(name)}
+					</strong>
+
+					<span>
+						${adminEsc(customer.email || "-")}
+					</span>
+
+				</div>
+
+
+				<form
+					id="admin-create-order-form"
+					class="admin-create-form"
+				>
+
+
+					<div class="admin-form-grid">
+
+
+						<div>
+
+							<label for="create-title">
+								عنوان سفارش
+							</label>
+
+							<input
+								id="create-title"
+								type="text"
+								required
+								placeholder="مثلاً ساخت ویدئوی تبلیغاتی"
+							>
+
+						</div>
+
+
+						<div>
+
+							<label for="create-subject">
+								موضوع
+							</label>
+
+							<input
+								id="create-subject"
+								type="text"
+								required
+								placeholder="موضوع ویدئو"
+							>
+
+						</div>
+
+
+						<div class="full">
+
+							<label for="create-description">
+								توضیحات
+							</label>
+
+							<textarea
+								id="create-description"
+								rows="6"
+								required
+								placeholder="توضیحات کامل سفارش..."
+							></textarea>
+
+						</div>
+
+
+						<div>
+
+							<label for="create-model">
+								مدل تولید
+							</label>
+
+							<select
+								id="create-model"
+								required
+							>
+
+								<option value="full">
+									تولید کامل
+								</option>
+
+								<option value="script">
+									اسکریپت
+								</option>
+
+								<option value="voice">
+									گویندگی
+								</option>
+
+								<option value="editing">
+									تدوین
+								</option>
+
+								<option value="animation">
+									انیمیشن
+								</option>
+
+								<option value="motion">
+									موشن گرافیک
+								</option>
+
+							</select>
+
+						</div>
+
+
+						<div>
+
+							<label for="create-duration">
+								مدت تقریبی
+							</label>
+
+							<input
+								id="create-duration"
+								type="text"
+								placeholder="مثلاً 60 ثانیه"
+							>
+
+						</div>
+
+
+						<div>
+
+							<label for="create-ratio">
+								نسبت تصویر
+							</label>
+
+							<select id="create-ratio">
+
+								<option value="">
+									انتخاب نشده
+								</option>
+
+								<option value="16:9">
+									16:9
+								</option>
+
+								<option value="9:16">
+									9:16
+								</option>
+
+								<option value="1:1">
+									1:1
+								</option>
+
+								<option value="4:5">
+									4:5
+								</option>
+
+							</select>
+
+						</div>
+
+
+						<div>
+
+							<label for="create-quality">
+								کیفیت خروجی
+							</label>
+
+							<input
+								id="create-quality"
+								type="text"
+								placeholder="مثلاً Full HD"
+							>
+
+						</div>
+
+
+						<div>
+
+							<label for="create-style">
+								سبک ویدئو
+							</label>
+
+							<input
+								id="create-style"
+								type="text"
+								placeholder="سبک دلخواه"
+							>
+
+						</div>
+
+
+						<div>
+
+							<label for="create-cost">
+								هزینه تخمینی
+							</label>
+
+							<input
+								id="create-cost"
+								type="number"
+								min="0"
+								step="1"
+								placeholder="تومان"
+							>
+
+						</div>
+
+
+						<div class="full">
+
+							<label for="create-notes">
+								یادداشت ویژه
+							</label>
+
+							<textarea
+								id="create-notes"
+								rows="4"
+								placeholder="یادداشت یا توضیح اضافی..."
+							></textarea>
+
+						</div>
+
+
+					</div>
+
+
+					<div
+						id="create-order-message"
+						class="message"
+					></div>
+
+
+					<div class="admin-form-actions">
+
+						<button
+							type="submit"
+							class="button primary"
+							id="create-order-submit"
+						>
+							ثبت سفارش
+						</button>
+
+
+						<a
+							class="button secondary"
+							href="admin-users.html"
+						>
+							انصراف
+						</a>
+
+					</div>
+
+
+				</form>
+
+
+			</section>
+
+		</div>
+
+	`;
+
+
+	document
+		.getElementById(
+			"admin-create-order-form"
+		)
+		.addEventListener(
+			"submit",
+			async event => {
+
+				event.preventDefault();
+
+
+				const button =
+					document.getElementById(
+						"create-order-submit"
+					);
+
+				const message =
+					document.getElementById(
+						"create-order-message"
+					);
+
+
+				button.disabled = true;
+
+				button.textContent =
+					"در حال ثبت...";
+
+
+				const title =
+					document.getElementById(
+						"create-title"
+					).value.trim();
+
+
+				const subject =
+					document.getElementById(
+						"create-subject"
+					).value.trim();
+
+
+				const description =
+					document.getElementById(
+						"create-description"
+					).value.trim();
+
+
+				const productionModel =
+					document.getElementById(
+						"create-model"
+					).value;
+
+
+				const duration =
+					document.getElementById(
+						"create-duration"
+					).value.trim();
+
+
+				const aspectRatio =
+					document.getElementById(
+						"create-ratio"
+					).value;
+
+
+				const quality =
+					document.getElementById(
+						"create-quality"
+					).value.trim();
+
+
+				const videoStyle =
+					document.getElementById(
+						"create-style"
+					).value.trim();
+
+
+				const costValue =
+					document.getElementById(
+						"create-cost"
+					).value;
+
+
+				const notes =
+					document.getElementById(
+						"create-notes"
+					).value.trim();
+
+
+				/*
+				 * شماره سفارش
+				 */
+
+				const orderNumber =
+					"TC-" +
+					Date.now().toString().slice(-8);
+
+
+				const {
+					data,
+					error
+				} = await window.db
+					.from("video_orders")
+					.insert({
+
+						order_number:
+							orderNumber,
+
+						customer_id:
+							customer.id,
+
+						title,
+
+						subject,
+
+						description,
+
+						estimated_duration:
+							duration || null,
+
+						production_model:
+							productionModel,
+
+						needs_script:
+							false,
+
+						needs_voice:
+							false,
+
+						needs_visuals:
+							false,
+
+						needs_editing:
+							false,
+
+						has_script:
+							false,
+
+						has_voice:
+							false,
+
+						has_visuals:
+							false,
+
+						aspect_ratio:
+							aspectRatio || null,
+
+						output_quality:
+							quality || null,
+
+						video_style:
+							videoStyle || null,
+
+						reference_links:
+							null,
+
+						special_notes:
+							notes || null,
+
+						status:
+							"new",
+
+						estimated_cost:
+							costValue
+								? Number(costValue)
+								: null,
+
+						final_cost:
+							null,
+
+						payment_status:
+							"pending"
+
+					})
+					.select("id")
+					.single();
+
+
+				if (error) {
+
+					console.error(
+						"CREATE ORDER ERROR:",
+						error
+					);
+
+
+					message.textContent =
+						"ثبت سفارش انجام نشد: " +
+						(error.message || "");
+
+
+					button.disabled = false;
+
+					button.textContent =
+						"ثبت سفارش";
+
+					return;
+
+				}
+
+
+				message.className =
+					"message admin-success";
+
+				message.textContent =
+					"سفارش با موفقیت ثبت شد.";
+
+
+				setTimeout(() => {
+
+					window.location.replace(
+						"admin-order.html?id=" +
+						encodeURIComponent(data.id)
+					);
+
+				}, 500);
+
+			}
+		);
+
+}
+
+
+/* ==================================================
+   LOAD ORDER
+================================================== */
 
 async function adminLoadOrder(orderId) {
 
 	const {
-		data: order,
+		data,
 		error
 	} = await window.db
 		.from("video_orders")
@@ -591,7 +1267,7 @@ async function adminLoadOrder(orderId) {
 	if (error) {
 
 		console.error(
-			"ADMIN ORDER LOAD ERROR:",
+			"LOAD ORDER ERROR:",
 			error
 		);
 
@@ -600,14 +1276,14 @@ async function adminLoadOrder(orderId) {
 	}
 
 
-	return order;
+	return data;
 
 }
 
 
-/* --------------------------------------------------
-   فایل‌های سفارش
--------------------------------------------------- */
+/* ==================================================
+   FILES
+================================================== */
 
 async function adminLoadFiles(orderId) {
 
@@ -632,7 +1308,7 @@ async function adminLoadFiles(orderId) {
 	if (error) {
 
 		console.error(
-			"ADMIN FILES ERROR:",
+			"FILES ERROR:",
 			error
 		);
 
@@ -651,8 +1327,8 @@ function adminRenderFiles(files) {
 	if (!files.length) {
 
 		return `
-			<div class="empty-box">
-				فایلی برای این سفارش ثبت نشده است.
+			<div class="admin-empty">
+				هنوز فایلی برای این سفارش ثبت نشده است.
 			</div>
 		`;
 
@@ -673,10 +1349,13 @@ function adminRenderFiles(files) {
 						</div>
 
 						<small>
-							${adminEsc(file.file_role || "فایل")}
+							${adminEsc(
+								file.file_role || "فایل"
+							)}
 						</small>
 
 					</div>
+
 
 					<a
 						class="button secondary"
@@ -697,9 +1376,9 @@ function adminRenderFiles(files) {
 }
 
 
-/* --------------------------------------------------
-   تاریخچه وضعیت
--------------------------------------------------- */
+/* ==================================================
+   HISTORY
+================================================== */
 
 async function adminLoadHistory(orderId) {
 
@@ -724,7 +1403,7 @@ async function adminLoadHistory(orderId) {
 	if (error) {
 
 		console.error(
-			"ADMIN HISTORY ERROR:",
+			"HISTORY ERROR:",
 			error
 		);
 
@@ -743,8 +1422,8 @@ function adminRenderHistory(history) {
 	if (!history.length) {
 
 		return `
-			<div class="empty-box">
-				تاریخچه‌ای ثبت نشده است.
+			<div class="admin-empty">
+				هنوز تغییری برای این سفارش ثبت نشده است.
 			</div>
 		`;
 
@@ -756,25 +1435,29 @@ function adminRenderHistory(history) {
 
 			${history.map(item => `
 
-				<div class="history-item">
+				<div class="admin-history-item">
 
-					<div class="history-status">
+					<div class="admin-history-status">
 						${adminEsc(
-							adminStatusText(item.status)
+							adminStatusText(
+								item.status
+							)
 						)}
 					</div>
+
 
 					${
 						item.note
 							? `
-								<div>
+								<div class="admin-history-note">
 									${adminEsc(item.note)}
 								</div>
 							`
 							: ""
 					}
 
-					<div class="history-meta">
+
+					<div class="admin-history-date">
 						${adminDate(item.created_at)}
 					</div>
 
@@ -788,9 +1471,9 @@ function adminRenderHistory(history) {
 }
 
 
-/* --------------------------------------------------
-   پیام‌های سفارش
--------------------------------------------------- */
+/* ==================================================
+   MESSAGES
+================================================== */
 
 async function adminLoadMessages(orderId) {
 
@@ -815,7 +1498,7 @@ async function adminLoadMessages(orderId) {
 	if (error) {
 
 		console.error(
-			"ADMIN MESSAGES ERROR:",
+			"MESSAGES ERROR:",
 			error
 		);
 
@@ -829,7 +1512,10 @@ async function adminLoadMessages(orderId) {
 }
 
 
-function adminRenderMessages(messages, adminId) {
+function adminRenderMessages(
+	messages,
+	adminId
+) {
 
 	const container =
 		document.getElementById(
@@ -845,9 +1531,19 @@ function adminRenderMessages(messages, adminId) {
 	if (!messages.length) {
 
 		container.innerHTML = `
-			<div class="empty-box">
-				هنوز پیامی برای این سفارش وجود ندارد.
+
+			<div class="admin-chat-empty">
+
+				<div style="font-size:30px;margin-bottom:8px;">
+					💬
+				</div>
+
+				<div>
+					هنوز گفت‌وگویی شروع نشده است.
+				</div>
+
 			</div>
+
 		`;
 
 		return;
@@ -856,39 +1552,48 @@ function adminRenderMessages(messages, adminId) {
 
 
 	container.innerHTML =
-		messages
-			.map(message => {
+		messages.map(message => {
 
-				const isAdmin =
-					message.sender_id === adminId;
+			const isAdmin =
+				message.sender_id === adminId;
 
 
-				return `
-					<div
-						class="chat-message ${
-							isAdmin
-								? "admin"
-								: "customer"
-						}"
-					>
+			return `
 
-						<span class="chat-message-meta">
+				<div
+					class="chat-message ${
+						isAdmin
+							? "admin"
+							: "customer"
+					}"
+				>
+
+					<div class="chat-message-meta">
+
+						<strong>
 							${
 								isAdmin
-									? "ادمین"
+									? "شما"
 									: "مشتری"
 							}
-							 •
-							${adminDate(message.created_at)}
+						</strong>
+
+						<span>
+							${adminDate(
+								message.created_at
+							)}
 						</span>
 
-						${adminEsc(message.message)}
-
 					</div>
-				`;
 
-			})
-			.join("");
+
+					${adminEsc(message.message)}
+
+				</div>
+
+			`;
+
+		}).join("");
 
 
 	container.scrollTop =
@@ -897,94 +1602,9 @@ function adminRenderMessages(messages, adminId) {
 }
 
 
-/* --------------------------------------------------
-   ارسال پیام ادمین
--------------------------------------------------- */
-
-async function adminSendMessage(
-	orderId,
-	adminId
-) {
-
-	const input =
-		document.getElementById(
-			"chat-input"
-		);
-
-	const button =
-		document.getElementById(
-			"chat-send"
-		);
-
-	const message =
-		input?.value.trim();
-
-
-	if (!message) {
-		return;
-	}
-
-
-	if (button) {
-		button.disabled = true;
-		button.textContent = "در حال ارسال...";
-	}
-
-
-	const {
-		error
-	} = await window.db
-		.from("order_messages")
-		.insert({
-			order_id: orderId,
-			sender_id: adminId,
-			message
-		});
-
-
-	if (error) {
-
-		console.error(
-			"ADMIN SEND MESSAGE ERROR:",
-			error
-		);
-
-
-		alert(
-			"ارسال پیام انجام نشد."
-		);
-
-
-		if (button) {
-
-			button.disabled = false;
-			button.textContent = "ارسال";
-
-		}
-
-		return;
-
-	}
-
-
-	input.value = "";
-
-
-	await adminRefreshMessages(
-		orderId,
-		adminId
-	);
-
-
-	if (button) {
-
-		button.disabled = false;
-		button.textContent = "ارسال";
-
-	}
-
-}
-
+/* ==================================================
+   REFRESH CHAT
+================================================== */
 
 async function adminRefreshMessages(
 	orderId,
@@ -1005,24 +1625,130 @@ async function adminRefreshMessages(
 }
 
 
-/* --------------------------------------------------
-   Real-time چت
--------------------------------------------------- */
+/* ==================================================
+   SEND MESSAGE
+================================================== */
 
-function adminSubscribeToMessages(
+async function adminSendMessage(
+	orderId,
+	adminId
+) {
+
+	const input =
+		document.getElementById(
+			"chat-input"
+		);
+
+	const button =
+		document.getElementById(
+			"chat-send"
+		);
+
+
+	if (!input) {
+		return;
+	}
+
+
+	const message =
+		input.value.trim();
+
+
+	if (!message) {
+		return;
+	}
+
+
+	button.disabled = true;
+
+	button.textContent =
+		"در حال ارسال...";
+
+
+	const {
+		error
+	} = await window.db
+		.from("order_messages")
+		.insert({
+
+			order_id:
+				orderId,
+
+			sender_id:
+				adminId,
+
+			message
+
+		});
+
+
+	if (error) {
+
+		console.error(
+			"SEND MESSAGE ERROR:",
+			error
+		);
+
+
+		alert(
+			"ارسال پیام انجام نشد."
+		);
+
+
+		button.disabled = false;
+
+		button.textContent =
+			"ارسال";
+
+		return;
+
+	}
+
+
+	input.value = "";
+
+
+	await adminRefreshMessages(
+		orderId,
+		adminId
+	);
+
+
+	button.disabled = false;
+
+	button.textContent =
+		"ارسال";
+
+}
+
+
+/* ==================================================
+   REALTIME CHAT
+================================================== */
+
+function adminSubscribeMessages(
 	orderId,
 	adminId
 ) {
 
 	if (!window.db?.channel) {
-		return null;
+		return;
 	}
 
 
-	const channel =
+	if (adminMessageChannel) {
+
+		window.db.removeChannel(
+			adminMessageChannel
+		);
+
+	}
+
+
+	adminMessageChannel =
 		window.db
 			.channel(
-				`admin-order-messages-${orderId}`
+				"admin-order-" + orderId
 			)
 			.on(
 				"postgres_changes",
@@ -1030,7 +1756,8 @@ function adminSubscribeToMessages(
 					event: "*",
 					schema: "public",
 					table: "order_messages",
-					filter: `order_id=eq.${orderId}`
+					filter:
+						"order_id=eq." + orderId
 				},
 				() => {
 
@@ -1043,30 +1770,25 @@ function adminSubscribeToMessages(
 			)
 			.subscribe();
 
-
-	return channel;
-
 }
 
 
-/* --------------------------------------------------
-   صفحه سفارش
--------------------------------------------------- */
+/* ==================================================
+   ADMIN ORDER PAGE
+================================================== */
 
 async function adminOrder() {
 
-	const authData =
+	const auth =
 		await requireUser(true);
 
-
-	if (!authData) {
+	if (!auth) {
 		return;
 	}
 
 
 	const root =
 		document.getElementById("root");
-
 
 	if (!root) {
 		return;
@@ -1083,47 +1805,98 @@ async function adminOrder() {
 		params.get("id");
 
 
-	/*
-	 * اگر id وجود نداشته باشد،
-	 * رفتار قبلی صفحه حفظ می‌شود.
-	 */
+	const customerId =
+		params.get("customer");
+
+
+	/* ----------------------------------------------
+	   CREATE ORDER
+	---------------------------------------------- */
+
+	if (!id && customerId) {
+
+		root.innerHTML = `
+			<section class="panel">
+				در حال دریافت اطلاعات مشتری...
+			</section>
+		`;
+
+
+		const customer =
+			await adminLoadCustomer(
+				customerId
+			);
+
+
+		if (!customer) {
+
+			root.innerHTML = `
+				<div class="admin-empty">
+					کاربر پیدا نشد.
+				</div>
+			`;
+
+			return;
+
+		}
+
+
+		await adminRenderCreateOrder(
+			customer,
+			root
+		);
+
+
+		return;
+
+	}
+
+
+	/* ----------------------------------------------
+	   NO ID
+	---------------------------------------------- */
 
 	if (!id) {
 
 		root.innerHTML = `
 
-			<div class="page-head">
+			<div class="admin-order-page">
 
-				<div>
+				<div class="admin-order-header">
 
-					<span class="eyebrow">
-						مدیریت
-					</span>
+					<div>
 
-					<h1>
-						ثبت سفارش برای کاربر موجود
-					</h1>
+						<span class="eyebrow">
+							مدیریت
+						</span>
+
+						<h1>
+							انتخاب مشتری
+						</h1>
+
+					</div>
 
 				</div>
 
+
+				<section class="panel admin-card">
+
+					<p class="muted">
+						برای ثبت سفارش جدید ابتدا
+						مشتری موردنظر را انتخاب کنید.
+					</p>
+
+
+					<a
+						class="button primary"
+						href="admin-users.html"
+					>
+						انتخاب مشتری
+					</a>
+
+				</section>
+
 			</div>
-
-
-			<section class="panel">
-
-				<p class="muted">
-					برای ثبت سفارش جدید،
-					ابتدا کاربر موردنظر را انتخاب کنید.
-				</p>
-
-				<a
-					class="button primary"
-					href="admin-users.html"
-				>
-					انتخاب کاربر
-				</a>
-
-			</section>
 
 		`;
 
@@ -1132,9 +1905,13 @@ async function adminOrder() {
 	}
 
 
+	/* ----------------------------------------------
+	   LOAD ORDER
+	---------------------------------------------- */
+
 	root.innerHTML = `
 		<section class="panel">
-			در حال دریافت اطلاعات سفارش...
+			در حال دریافت سفارش...
 		</section>
 	`;
 
@@ -1146,7 +1923,7 @@ async function adminOrder() {
 	if (!order) {
 
 		root.innerHTML = `
-			<div class="empty">
+			<div class="admin-empty">
 				سفارش پیدا نشد.
 			</div>
 		`;
@@ -1184,12 +1961,12 @@ async function adminOrder() {
 		<div class="admin-order-page">
 
 
-			<div class="page-head">
+			<div class="admin-order-header">
 
 				<div>
 
 					<span class="eyebrow">
-						${adminEsc(order.order_number)}
+						سفارش ${adminEsc(order.order_number)}
 					</span>
 
 					<h1>
@@ -1199,12 +1976,23 @@ async function adminOrder() {
 				</div>
 
 
-				<a
-					class="button secondary"
-					href="admin.html"
-				>
-					بازگشت به سفارشات
-				</a>
+				<div class="admin-order-actions">
+
+					<a
+						class="button secondary"
+						href="admin.html"
+					>
+						سفارشات
+					</a>
+
+					<a
+						class="button secondary"
+						href="admin-users.html"
+					>
+						کاربران
+					</a>
+
+				</div>
 
 			</div>
 
@@ -1212,14 +2000,26 @@ async function adminOrder() {
 			<div class="admin-detail-grid">
 
 
-				<section class="panel">
+				<section class="panel admin-card">
 
-					<h2>
-						اطلاعات سفارش
-					</h2>
+					<div class="admin-card-title">
+
+						<h2>
+							جزئیات سفارش
+						</h2>
+
+						<span>
+							${adminEsc(
+								adminStatusText(
+									order.status
+								)
+							)}
+						</span>
+
+					</div>
 
 
-					<div class="admin-order-info">
+					<div class="admin-info-grid">
 
 
 						<div class="admin-info-item">
@@ -1272,7 +2072,7 @@ async function adminOrder() {
 						<div class="admin-info-item">
 
 							<span>
-								مدت تخمینی
+								مدت تقریبی
 							</span>
 
 							<strong>
@@ -1314,7 +2114,7 @@ async function adminOrder() {
 						</div>
 
 
-						<div class="admin-info-item">
+						<div class="admin-info-item full">
 
 							<span>
 								سبک ویدئو
@@ -1329,67 +2129,10 @@ async function adminOrder() {
 						</div>
 
 
-						<div class="admin-info-item">
-
-							<span>
-								وضعیت پرداخت
-							</span>
-
-							<strong>
-								${adminEsc(
-									adminPaymentText(
-										order.payment_status
-									)
-								)}
-							</strong>
-
-						</div>
-
-
-						<div class="admin-info-item">
-
-							<span>
-								هزینه تخمینی
-							</span>
-
-							<strong>
-								${
-									order.estimated_cost !== null &&
-									order.estimated_cost !== undefined
-										? adminEsc(
-											order.estimated_cost
-										)
-										: "-"
-								}
-							</strong>
-
-						</div>
-
-
-						<div class="admin-info-item">
-
-							<span>
-								هزینه نهایی
-							</span>
-
-							<strong>
-								${
-									order.final_cost !== null &&
-									order.final_cost !== undefined
-										? adminEsc(
-											order.final_cost
-										)
-										: "-"
-								}
-							</strong>
-
-						</div>
-
-
 						<div class="admin-info-item full">
 
 							<span>
-								توضیحات سفارش
+								توضیحات
 							</span>
 
 							<strong class="admin-description">
@@ -1404,32 +2147,37 @@ async function adminOrder() {
 						<div class="admin-info-item full">
 
 							<span>
-								امکانات موردنیاز
+								امکانات سفارش
 							</span>
+
 
 							<div class="admin-options">
 
 								${
-									order.needs_script || order.has_script
-										? `<span class="admin-option">📝 اسکریپت</span>`
+									order.needs_script ||
+									order.has_script
+										? `<span class="admin-option">اسکریپت</span>`
 										: ""
 								}
 
 								${
-									order.needs_voice || order.has_voice
-										? `<span class="admin-option">🎙️ گویندگی</span>`
+									order.needs_voice ||
+									order.has_voice
+										? `<span class="admin-option">گویندگی</span>`
 										: ""
 								}
 
 								${
-									order.needs_visuals || order.has_visuals
-										? `<span class="admin-option">🎨 تصاویر</span>`
+									order.needs_visuals ||
+									order.has_visuals
+										? `<span class="admin-option">تصاویر</span>`
 										: ""
 								}
 
 								${
-									order.needs_editing || order.has_editing
-										? `<span class="admin-option">🎬 تدوین</span>`
+									order.needs_editing ||
+									order.has_editing
+										? `<span class="admin-option">تدوین</span>`
 										: ""
 								}
 
@@ -1468,71 +2216,60 @@ async function adminOrder() {
 						</div>
 
 
-						<div class="admin-info-item">
-
-							<span>
-								تاریخ ثبت
-							</span>
-
-							<strong>
-								${adminDate(
-									order.created_at
-								)}
-							</strong>
-
-						</div>
-
-
-						<div class="admin-info-item">
-
-							<span>
-								آخرین بروزرسانی
-							</span>
-
-							<strong>
-								${adminDate(
-									order.updated_at
-								)}
-							</strong>
-
-						</div>
-
-
 					</div>
 
 				</section>
 
 
-				<section class="panel">
+				<section class="panel admin-card">
 
-					<h2>
-						اطلاعات مشتری
-					</h2>
+					<div class="admin-card-title">
+
+						<h2>
+							مشتری
+						</h2>
+
+					</div>
 
 
-					<div class="admin-customer-card">
+					<div class="admin-customer">
 
-						<div class="admin-customer-name">
-							${adminEsc(customerName)}
+
+						<div class="admin-customer-main">
+
+							${
+								profile.avatar_url
+									? `
+										<img
+											class="admin-customer-avatar"
+											src="${adminEsc(profile.avatar_url)}"
+											alt=""
+										>
+									`
+									: `
+										<div class="admin-customer-avatar"></div>
+									`
+							}
+
+
+							<div>
+
+								<div class="admin-customer-name">
+									${adminEsc(customerName)}
+								</div>
+
+								<small>
+									${adminEsc(
+										profile.email || "-"
+									)}
+								</small>
+
+							</div>
+
 						</div>
 
 
-						<div class="admin-customer-item">
-
-							<span>
-								ایمیل
-							</span>
-
-							<strong>
-								${adminEsc(
-									profile.email || "-"
-								)}
-							</strong>
-
-						</div>
-
-
-						<div class="admin-customer-item">
+						<div class="admin-customer-line">
 
 							<span>
 								شماره تلفن
@@ -1547,7 +2284,7 @@ async function adminOrder() {
 						</div>
 
 
-						<div class="admin-customer-item">
+						<div class="admin-customer-line">
 
 							<span>
 								آدرس
@@ -1556,6 +2293,21 @@ async function adminOrder() {
 							<strong>
 								${adminEsc(
 									profile.address || "-"
+								)}
+							</strong>
+
+						</div>
+
+
+						<div class="admin-customer-line">
+
+							<span>
+								تاریخ ثبت سفارش
+							</span>
+
+							<strong>
+								${adminDate(
+									order.created_at
 								)}
 							</strong>
 
@@ -1572,11 +2324,15 @@ async function adminOrder() {
 			<div class="admin-detail-grid">
 
 
-				<section class="panel">
+				<section class="panel admin-card">
 
-					<h2>
-						تغییر وضعیت سفارش
-					</h2>
+					<div class="admin-card-title">
+
+						<h2>
+							وضعیت و هزینه
+						</h2>
+
+					</div>
 
 
 					<form
@@ -1584,42 +2340,97 @@ async function adminOrder() {
 						class="admin-status-form"
 					>
 
+
+						<label for="status">
+							وضعیت سفارش
+						</label>
+
+
 						<select id="status">
 
 							${[
-								["new", "جدید"],
-								["review", "در حال بررسی"],
-								["approved", "تأیید شده"],
-								["production", "در حال تولید"],
-								["editing", "در حال تدوین"],
-								["revision", "نیازمند اصلاح"],
-								["ready", "آماده تحویل"],
-								["completed", "تکمیل شده"],
-								["cancelled", "لغو شده"]
-							]
-								.map(
-									([value, label]) => `
-										<option
-											value="${value}"
-											${
-												order.status === value
-													? "selected"
-													: ""
-											}
-										>
-											${label}
-										</option>
-									`
-								)
-								.join("")}
+								["new","جدید"],
+								["review","در حال بررسی"],
+								["approved","تأیید شده"],
+								["production","در حال تولید"],
+								["editing","در حال تدوین"],
+								["revision","نیازمند اصلاح"],
+								["ready","آماده تحویل"],
+								["completed","تکمیل شده"],
+								["cancelled","لغو شده"]
+							].map(
+								([value,label]) => `
+									<option
+										value="${value}"
+										${
+											order.status === value
+												? "selected"
+												: ""
+										}
+									>
+										${label}
+									</option>
+								`
+							).join("")}
 
 						</select>
+
+
+						<div class="admin-cost-grid">
+
+							<div class="admin-info-item">
+
+								<span>
+									هزینه تخمینی
+								</span>
+
+								<strong>
+									${adminEsc(
+										order.estimated_cost ?? "-"
+									)}
+								</strong>
+
+							</div>
+
+
+							<div class="admin-info-item">
+
+								<span>
+									هزینه نهایی
+								</span>
+
+								<strong>
+									${adminEsc(
+										order.final_cost ?? "-"
+									)}
+								</strong>
+
+							</div>
+
+						</div>
+
+
+						<div class="admin-info-item">
+
+							<span>
+								وضعیت پرداخت
+							</span>
+
+							<strong>
+								${adminEsc(
+									adminPaymentText(
+										order.payment_status
+									)
+								)}
+							</strong>
+
+						</div>
 
 
 						<textarea
 							id="note"
 							rows="4"
-							placeholder="یادداشت تغییر وضعیت"
+							placeholder="یادداشت تغییر وضعیت..."
 						></textarea>
 
 
@@ -1630,23 +2441,28 @@ async function adminOrder() {
 
 
 						<button
-							class="button primary"
 							type="submit"
+							class="button primary"
 							id="status-submit"
 						>
-							ذخیره وضعیت
+							ذخیره تغییرات
 						</button>
+
 
 					</form>
 
 				</section>
 
 
-				<section class="panel">
+				<section class="panel admin-card">
 
-					<h2>
-						تاریخچه وضعیت
-					</h2>
+					<div class="admin-card-title">
+
+						<h2>
+							تاریخچه وضعیت
+						</h2>
+
+					</div>
 
 
 					<div id="status-history">
@@ -1661,11 +2477,15 @@ async function adminOrder() {
 			</div>
 
 
-			<section class="panel">
+			<section class="panel admin-card">
 
-				<h2>
-					فایل‌های سفارش
-				</h2>
+				<div class="admin-card-title">
+
+					<h2>
+						فایل‌های سفارش
+					</h2>
+
+				</div>
 
 
 				<div id="order-files">
@@ -1677,11 +2497,24 @@ async function adminOrder() {
 			</section>
 
 
-			<section class="panel admin-chat">
+			<section class="panel admin-chat-panel">
 
-				<h2>
-					گفت‌وگو با مشتری
-				</h2>
+
+				<div class="admin-chat-header">
+
+					<div>
+
+						<h2>
+							گفت‌وگو با مشتری
+						</h2>
+
+						<span class="admin-chat-online">
+							پیام‌های این سفارش
+						</span>
+
+					</div>
+
+				</div>
 
 
 				<div
@@ -1695,22 +2528,31 @@ async function adminOrder() {
 					class="admin-chat-form"
 				>
 
-					<textarea
-						id="chat-input"
-						rows="2"
-						placeholder="پیام خود را برای مشتری بنویسید..."
-					></textarea>
+					<div class="admin-chat-input-wrap">
+
+						<textarea
+							id="chat-input"
+							rows="2"
+							placeholder="پیام خود را برای مشتری بنویسید..."
+						></textarea>
+
+						<div class="admin-chat-hint">
+							Enter برای ارسال · Shift + Enter برای خط جدید
+						</div>
+
+					</div>
 
 
 					<button
 						type="submit"
-						class="button primary"
+						class="button primary admin-chat-send"
 						id="chat-send"
 					>
 						ارسال
 					</button>
 
 				</form>
+
 
 			</section>
 
@@ -1720,15 +2562,23 @@ async function adminOrder() {
 	`;
 
 
-	/* نمایش پیام‌ها */
+	/* پیام‌ها */
 
 	adminRenderMessages(
 		messages,
-		authData.user.id
+		auth.user.id
 	);
 
 
-	/* ارسال پیام */
+	/* Real-time */
+
+	adminSubscribeMessages(
+		id,
+		auth.user.id
+	);
+
+
+	/* Chat submit */
 
 	const chatForm =
 		document.getElementById(
@@ -1736,26 +2586,49 @@ async function adminOrder() {
 		);
 
 
-	if (chatForm) {
+	chatForm.addEventListener(
+		"submit",
+		async event => {
 
-		chatForm.addEventListener(
-			"submit",
-			async event => {
+			event.preventDefault();
+
+			await adminSendMessage(
+				id,
+				auth.user.id
+			);
+
+		}
+	);
+
+
+	/* Enter */
+
+	const chatInput =
+		document.getElementById(
+			"chat-input"
+		);
+
+
+	chatInput.addEventListener(
+		"keydown",
+		event => {
+
+			if (
+				event.key === "Enter" &&
+				!event.shiftKey
+			) {
 
 				event.preventDefault();
 
-				await adminSendMessage(
-					id,
-					authData.user.id
-				);
+				chatForm.requestSubmit();
 
 			}
-		);
 
-	}
+		}
+	);
 
 
-	/* تغییر وضعیت */
+	/* Status */
 
 	const statusForm =
 		document.getElementById(
@@ -1763,195 +2636,150 @@ async function adminOrder() {
 		);
 
 
-	if (statusForm) {
+	statusForm.addEventListener(
+		"submit",
+		async event => {
 
-		statusForm.addEventListener(
-			"submit",
-			async event => {
-
-				event.preventDefault();
+			event.preventDefault();
 
 
-				const status =
-					document.getElementById(
-						"status"
-					).value;
+			const status =
+				document.getElementById(
+					"status"
+				).value;
 
 
-				const note =
-					document.getElementById(
-						"note"
-					).value.trim();
+			const note =
+				document.getElementById(
+					"note"
+				).value.trim();
 
 
-				const button =
-					document.getElementById(
-						"status-submit"
-					);
-
-
-				const message =
-					document.getElementById(
-						"status-msg"
-					);
-
-
-				if (button) {
-
-					button.disabled = true;
-					button.textContent =
-						"در حال ذخیره...";
-
-				}
-
-
-				const {
-					error: updateError
-				} = await window.db
-					.from("video_orders")
-					.update({
-						status,
-						updated_at:
-							new Date().toISOString()
-					})
-					.eq(
-						"id",
-						id
-					);
-
-
-				if (updateError) {
-
-					console.error(
-						"STATUS UPDATE ERROR:",
-						updateError
-					);
-
-
-					if (message) {
-						message.textContent =
-							"ذخیره وضعیت انجام نشد.";
-					}
-
-
-					if (button) {
-
-						button.disabled = false;
-						button.textContent =
-							"ذخیره وضعیت";
-
-					}
-
-					return;
-
-				}
-
-
-				const {
-					error: historyError
-				} = await window.db
-					.from("order_status_history")
-					.insert({
-						order_id: id,
-						status,
-						changed_by:
-							authData.user.id,
-						note: note || null
-					});
-
-
-				if (historyError) {
-
-					console.error(
-						"HISTORY INSERT ERROR:",
-						historyError
-					);
-
-
-					if (message) {
-						message.textContent =
-							"وضعیت ذخیره شد، اما تاریخچه ثبت نشد.";
-					}
-
-				} else {
-
-					if (message) {
-						message.textContent =
-							"وضعیت با موفقیت ذخیره شد.";
-					}
-
-				}
-
-
-				const newHistory =
-					await adminLoadHistory(id);
-
-
-				const historyElement =
-					document.getElementById(
-						"status-history"
-					);
-
-
-				if (historyElement) {
-
-					historyElement.innerHTML =
-						adminRenderHistory(
-							newHistory
-						);
-
-				}
-
-
-				if (button) {
-
-					button.disabled = false;
-					button.textContent =
-						"ذخیره وضعیت";
-
-				}
-
-			}
-		);
-
-	}
-
-
-	/*
-	 * اتصال Real-time به پیام‌های سفارش
-	 */
-
-	const messageChannel =
-		adminSubscribeToMessages(
-			id,
-			authData.user.id
-		);
-
-
-	/*
-	 * وقتی صفحه سفارش ترک شد،
-	 * کانال Real-time بسته شود.
-	 */
-
-	window.addEventListener(
-		"beforeunload",
-		() => {
-
-			if (
-				messageChannel &&
-				window.db?.removeChannel
-			) {
-
-				window.db.removeChannel(
-					messageChannel
+			const button =
+				document.getElementById(
+					"status-submit"
 				);
 
+
+			const message =
+				document.getElementById(
+					"status-msg"
+				);
+
+
+			button.disabled = true;
+
+			button.textContent =
+				"در حال ذخیره...";
+
+
+			const {
+				error
+			} = await window.db
+				.from("video_orders")
+				.update({
+
+					status,
+
+					updated_at:
+						new Date().toISOString()
+
+				})
+				.eq(
+					"id",
+					id
+				);
+
+
+			if (error) {
+
+				console.error(
+					"STATUS UPDATE ERROR:",
+					error
+				);
+
+
+				message.textContent =
+					"ذخیره وضعیت انجام نشد.";
+
+
+				button.disabled = false;
+
+				button.textContent =
+					"ذخیره تغییرات";
+
+				return;
+
 			}
 
-		},
-		{
-			once: true
+
+			const {
+				error: historyError
+			} = await window.db
+				.from("order_status_history")
+				.insert({
+
+					order_id:
+						id,
+
+					status,
+
+					changed_by:
+						auth.user.id,
+
+					note:
+						note || null
+
+				});
+
+
+			if (historyError) {
+
+				console.error(
+					"HISTORY ERROR:",
+					historyError
+				);
+
+
+				message.textContent =
+					"وضعیت ذخیره شد، اما تاریخچه ثبت نشد.";
+
+			} else {
+
+				message.textContent =
+					"تغییرات با موفقیت ذخیره شد.";
+
+			}
+
+
+			const newHistory =
+				await adminLoadHistory(id);
+
+
+			document.getElementById(
+				"status-history"
+			).innerHTML =
+				adminRenderHistory(
+					newHistory
+				);
+
+
+			button.disabled = false;
+
+			button.textContent =
+				"ذخیره تغییرات";
+
 		}
 	);
 
 }
+
+
+window.adminOrders =
+	adminOrders;
+
+window.adminUsers =
+	adminUsers;
+
+window.adminOrder =
+	adminOrder;
