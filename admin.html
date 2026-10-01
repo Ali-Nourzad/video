@@ -2,7 +2,9 @@
 <html lang="fa" dir="rtl">
 
 <head>
+
 	<meta charset="utf-8">
+
 	<meta
 		name="viewport"
 		content="width=device-width, initial-scale=1"
@@ -14,6 +16,143 @@
 		rel="stylesheet"
 		href="css/style.css"
 	>
+
+	<style>
+		.admin-orders-layout {
+			display: grid;
+			grid-template-columns: 220px minmax(0, 1fr);
+			gap: 24px;
+			align-items: start;
+		}
+
+		.admin-order-sidebar {
+			position: sticky;
+			top: 24px;
+		}
+
+		.admin-order-sidebar h3 {
+			margin-top: 0;
+			margin-bottom: 14px;
+		}
+
+		.order-filter-list {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		}
+
+		.order-filter {
+			width: 100%;
+			border: 1px solid var(--border, #ddd);
+			background: var(--surface, #fff);
+			color: inherit;
+			border-radius: 10px;
+			padding: 11px 12px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+			cursor: pointer;
+			font: inherit;
+			text-align: right;
+			transition: 0.2s ease;
+		}
+
+		.order-filter:hover {
+			transform: translateY(-1px);
+		}
+
+		.order-filter.active {
+			background: var(--primary, #222);
+			color: #fff;
+			border-color: var(--primary, #222);
+		}
+
+		.order-filter-count {
+			min-width: 25px;
+			height: 25px;
+			border-radius: 50%;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			background: rgba(127, 127, 127, 0.15);
+			font-size: 12px;
+		}
+
+		.order-filter.active .order-filter-count {
+			background: rgba(255, 255, 255, 0.2);
+		}
+
+		.admin-orders-content {
+			min-width: 0;
+		}
+
+		.admin-orders-title {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 15px;
+			margin-bottom: 20px;
+		}
+
+		.admin-orders-title h1 {
+			margin: 0;
+		}
+
+		.order-row {
+			cursor: pointer;
+		}
+
+		.order-row:hover {
+			background: rgba(127, 127, 127, 0.06);
+		}
+
+		.order-title-cell {
+			font-weight: 600;
+		}
+
+		.order-customer-cell {
+			min-width: 130px;
+		}
+
+		.order-number {
+			font-family: monospace;
+			direction: ltr;
+			display: inline-block;
+		}
+
+		@media (max-width: 800px) {
+
+			.admin-orders-layout {
+				grid-template-columns: 1fr;
+			}
+
+			.admin-order-sidebar {
+				position: static;
+			}
+
+			.order-filter-list {
+				display: grid;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+			}
+
+			.admin-orders-title {
+				align-items: flex-start;
+			}
+
+			.table-wrap {
+				overflow-x: auto;
+			}
+		}
+
+		@media (max-width: 500px) {
+
+			.order-filter-list {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+
 </head>
 
 
@@ -69,10 +208,175 @@
 
 	<main class="page">
 
-		<div
-			class="container"
-			id="root"
-		></div>
+		<div class="container">
+
+			<div class="page-head">
+
+				<div>
+					<span class="eyebrow">
+						پنل مدیریت
+					</span>
+
+					<h1>
+						مدیریت سفارشات
+					</h1>
+				</div>
+
+				<button
+					type="button"
+					id="refresh"
+					class="button secondary"
+				>
+					بروزرسانی
+				</button>
+
+			</div>
+
+
+			<div class="stats">
+
+				<div class="stat">
+					<span>کل</span>
+					<strong id="total">0</strong>
+				</div>
+
+				<div class="stat">
+					<span>جدید</span>
+					<strong id="new">0</strong>
+				</div>
+
+				<div class="stat">
+					<span>در حال انجام</span>
+					<strong id="progress">0</strong>
+				</div>
+
+				<div class="stat">
+					<span>آماده تحویل</span>
+					<strong id="ready">0</strong>
+				</div>
+
+			</div>
+
+
+			<div class="admin-orders-layout">
+
+				<aside class="panel admin-order-sidebar">
+
+					<h3>
+						سفارشات
+					</h3>
+
+					<div class="order-filter-list">
+
+						<button
+							type="button"
+							class="order-filter active"
+							data-filter="all"
+						>
+							<span>📦 همه سفارشات</span>
+							<span
+								class="order-filter-count"
+								id="count-all"
+							>
+								0
+							</span>
+						</button>
+
+
+						<button
+							type="button"
+							class="order-filter"
+							data-filter="progress"
+						>
+							<span>🔄 در جریان</span>
+							<span
+								class="order-filter-count"
+								id="count-progress"
+							>
+								0
+							</span>
+						</button>
+
+
+						<button
+							type="button"
+							class="order-filter"
+							data-filter="completed"
+						>
+							<span>✅ تکمیل شده</span>
+							<span
+								class="order-filter-count"
+								id="count-completed"
+							>
+								0
+							</span>
+						</button>
+
+
+						<button
+							type="button"
+							class="order-filter"
+							data-filter="cancelled"
+						>
+							<span>❌ لغو شده</span>
+							<span
+								class="order-filter-count"
+								id="count-cancelled"
+							>
+								0
+							</span>
+						</button>
+
+					</div>
+
+				</aside>
+
+
+				<section class="admin-orders-content">
+
+					<div class="admin-orders-title">
+
+						<h2 id="orders-title">
+							همه سفارشات
+						</h2>
+
+					</div>
+
+
+					<section class="panel">
+
+						<div class="table-wrap">
+
+							<table class="table">
+
+								<thead>
+
+									<tr>
+										<th>شماره</th>
+										<th>عنوان</th>
+										<th>کاربر</th>
+										<th>مدل</th>
+										<th>وضعیت</th>
+										<th>تاریخ</th>
+										<th>عملیات</th>
+									</tr>
+
+								</thead>
+
+
+								<tbody id="orders-body"></tbody>
+
+							</table>
+
+						</div>
+
+					</section>
+
+				</section>
+
+			</div>
+
+		</div>
 
 	</main>
 
@@ -87,21 +391,74 @@
 
 
 	<script>
+
 		document.addEventListener("DOMContentLoaded", () => {
 
 			const logoutButton =
 				document.getElementById("logout");
 
+			const refreshButton =
+				document.getElementById("refresh");
+
+
 			if (logoutButton) {
+
 				logoutButton.addEventListener(
 					"click",
 					logout
 				);
+
 			}
 
-			adminOrder();
+
+			if (refreshButton) {
+
+				refreshButton.addEventListener(
+					"click",
+					adminOrders
+				);
+
+			}
+
+
+			document
+				.querySelectorAll(".order-filter")
+				.forEach(button => {
+
+					button.addEventListener(
+						"click",
+						() => {
+
+							document
+								.querySelectorAll(".order-filter")
+								.forEach(item => {
+									item.classList.remove("active");
+								});
+
+
+							button.classList.add("active");
+
+
+							if (
+								window.adminSetOrderFilter
+							) {
+
+								window.adminSetOrderFilter(
+									button.dataset.filter
+								);
+
+							}
+
+						}
+					);
+
+				});
+
+
+			adminOrders();
 
 		});
+
 	</script>
 
 </body>
