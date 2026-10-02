@@ -236,7 +236,8 @@ async function adminOrders() {
     if (!auth) {
         return;
     }
-
+    window.__tchoobCurrentUserId =
+        auth.user.id;
 
     const body =
         document.getElementById(
