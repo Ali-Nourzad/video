@@ -1,298 +1,93 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
-
 <head>
-
 	<meta charset="utf-8">
-
-	<meta
-		name="viewport"
-		content="width=device-width, initial-scale=1"
-	>
-
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#31526b">
 	<title>مدیریت کاربران | T-Choob Video</title>
-
-	<link
-		rel="stylesheet"
-		href="css/style.css"
-	>
-
-	<link
-		rel="stylesheet"
-		href="css/admin.css"
-	>
-
+	<link rel="stylesheet" href="css/style.css">
 </head>
 
-
 <body class="admin-page">
-
-	<header class="site-header admin-header">
-
+	<header class="site-header">
 		<div class="container header-inner">
-
-			<a
-				class="brand"
-				href="admin.html"
-			>
-				T-Choob Video
+			<a class="brand" href="admin.html" aria-label="T-Choob Video">
+				<span class="brand-mark">TC</span>
+				<span>T-Choob Video</span>
 			</a>
 
-
-			<nav class="nav">
-
-				<a href="admin.html">
-					سفارشات
-				</a>
-
-				<a
-					class="active"
-					href="admin-users.html"
-				>
-					کاربران
-				</a>
-
-				<button
-					type="button"
-					id="logout"
-				>
-					خروج
-				</button>
-
+			<nav class="nav admin-nav" aria-label="ناوبری مدیریت">
+				<a href="admin.html">سفارشات</a>
+				<a class="active" href="admin-users.html">کاربران</a>
+				<button id="logout" class="nav-button danger-text" type="button">خروج</button>
 			</nav>
 
-
-			<button
-				type="button"
-				id="theme"
-				class="theme"
-			>
-				حالت تاریک
-			</button>
-
+			<button id="theme" class="theme" type="button">حالت تاریک</button>
 		</div>
-
 	</header>
 
-
-	<main class="page admin-main">
-
+	<main class="page">
 		<div class="container">
-
-			<div class="admin-topbar">
-
+			<div class="page-head">
 				<div>
-
-					<span class="eyebrow">
-						پنل مدیریت
-					</span>
-
-					<h1>
-						مدیریت کاربران
-					</h1>
-
-					<p class="admin-subtitle">
-						کاربران ثبت‌نام‌شده را مشاهده کنید و برای هر کاربر سفارش ایجاد کنید.
-					</p>
-
+					<span class="eyebrow">پنل مدیریت</span>
+					<h1>کاربران</h1>
+					<p class="page-subtitle">فهرست کاربران ثبت‌نام‌شده در T-Choob Video</p>
 				</div>
 
-
-				<div class="admin-actions">
-
-					<a
-						class="button primary"
-						href="admin.html"
-					>
-						مشاهده سفارش‌ها
-					</a>
-
-					<button
-						type="button"
-						id="refresh"
-						class="button secondary"
-					>
-						بروزرسانی
-					</button>
-
-				</div>
-
+				<button id="refresh" class="button secondary" type="button">
+					<span aria-hidden="true">↻</span>
+					بروزرسانی
+				</button>
 			</div>
 
-
-			<section class="admin-user-summary">
-
-				<div class="admin-stat">
-
-					<div class="admin-stat-label">
-						تعداد کاربران
-					</div>
-
-					<strong id="users-total">
-						0
-					</strong>
-
-				</div>
-
-
-				<div class="admin-stat">
-
-					<div class="admin-stat-label">
-						مشتریان
-					</div>
-
-					<strong id="customers-total">
-						0
-					</strong>
-
-				</div>
-
-
-				<div class="admin-stat">
-
-					<div class="admin-stat-label">
-						ادمین‌ها
-					</div>
-
-					<strong id="admins-total">
-						0
-					</strong>
-
-				</div>
-
-			</section>
-
-
-			<section class="panel">
-
-				<div class="panel-heading">
-
+			<section class="panel users-panel">
+				<div class="panel-header">
 					<div>
-
-						<h2>
-							کاربران
-						</h2>
-
-						<p>
-							برای ایجاد سفارش، کاربر موردنظر را انتخاب کنید.
-						</p>
-
+						<h2>فهرست کاربران</h2>
+						<p>اطلاعات حساب‌ها از جدول profiles دریافت می‌شود.</p>
 					</div>
-
 				</div>
 
-
-				<div class="table-wrap admin-table-wrap">
-
-					<table class="table admin-table">
-
+				<div class="table-wrap">
+					<table class="table admin-table users-table">
 						<thead>
-
 							<tr>
-
-								<th>
-									نام
-								</th>
-
-								<th>
-									ایمیل
-								</th>
-
-								<th>
-									تلفن
-								</th>
-
-								<th>
-									نقش
-								</th>
-
-								<th>
-									عضویت
-								</th>
-
-								<th>
-									عملیات
-								</th>
-
+								<th>کاربر</th>
+								<th>ایمیل</th>
+								<th>تلفن</th>
+								<th>نقش</th>
+								<th>عضویت</th>
+								<th>عملیات</th>
 							</tr>
-
 						</thead>
-
-
 						<tbody id="users-body">
-
 							<tr>
-
-								<td
-									colspan="6"
-									class="table-loading"
-								>
+								<td colspan="6" class="table-loading">
+									<span class="loading-spinner"></span>
 									در حال دریافت کاربران...
 								</td>
-
 							</tr>
-
 						</tbody>
-
 					</table>
-
 				</div>
-
 			</section>
-
 		</div>
-
 	</main>
 
-
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 	<script src="js/config.js"></script>
-
 	<script src="js/supabase.js"></script>
-
 	<script src="js/auth.js"></script>
-
 	<script src="js/app.js"></script>
-
 	<script src="js/admin.js"></script>
 
-
 	<script>
-
 		document.addEventListener("DOMContentLoaded", () => {
-
-			const logoutButton = document.getElementById("logout");
-
-			const refreshButton = document.getElementById("refresh");
-
-
-			if (logoutButton) {
-
-				logoutButton.addEventListener(
-					"click",
-					logout
-				);
-
-			}
-
-
-			if (refreshButton) {
-
-				refreshButton.addEventListener(
-					"click",
-					() => adminUsers()
-				);
-
-			}
-
-
+			document.getElementById("logout")?.addEventListener("click", logout);
+			document.getElementById("refresh")?.addEventListener("click", adminUsers);
 			adminUsers();
-
 		});
-
 	</script>
-
 </body>
-
 </html>
