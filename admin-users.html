@@ -17,86 +17,17 @@
 		href="css/style.css"
 	>
 
-	<style>
-
-		.admin-users-page {
-			padding-bottom: 50px;
-		}
-
-		.admin-users-head {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 15px;
-			margin-bottom: 22px;
-		}
-
-		.admin-users-head h1 {
-			margin: 5px 0 0;
-		}
-
-		.admin-users-actions {
-			display: flex;
-			gap: 9px;
-		}
-
-		.admin-users-panel {
-			padding: 0;
-			overflow: hidden;
-		}
-
-		.admin-user-row:hover {
-			background: rgba(127,127,127,.05);
-		}
-
-		.admin-user-name {
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			min-width: 150px;
-		}
-
-		.admin-user-avatar {
-			width: 36px;
-			height: 36px;
-			border-radius: 50%;
-			object-fit: cover;
-			background: rgba(127,127,127,.1);
-		}
-
-		.admin-role {
-			display: inline-flex;
-			padding: 5px 9px;
-			border-radius: 999px;
-			font-size: 12px;
-			background: rgba(127,127,127,.1);
-		}
-
-		@media (max-width: 600px) {
-
-			.admin-users-head {
-				align-items: flex-start;
-				flex-direction: column;
-			}
-
-			.admin-users-actions {
-				width: 100%;
-			}
-
-			.admin-users-actions .button {
-				flex: 1;
-			}
-
-		}
-
-	</style>
+	<link
+		rel="stylesheet"
+		href="css/admin.css"
+	>
 
 </head>
 
 
-<body>
+<body class="admin-page">
 
-	<header class="site-header">
+	<header class="site-header admin-header">
 
 		<div class="container header-inner">
 
@@ -144,12 +75,11 @@
 	</header>
 
 
-	<main class="page admin-users-page">
+	<main class="page admin-main">
 
 		<div class="container">
 
-
-			<div class="admin-users-head">
+			<div class="admin-topbar">
 
 				<div>
 
@@ -158,25 +88,29 @@
 					</span>
 
 					<h1>
-						کاربران
+						مدیریت کاربران
 					</h1>
+
+					<p class="admin-subtitle">
+						کاربران ثبت‌نام‌شده را مشاهده کنید و برای هر کاربر سفارش ایجاد کنید.
+					</p>
 
 				</div>
 
 
-				<div class="admin-users-actions">
+				<div class="admin-actions">
 
 					<a
-						class="button secondary"
+						class="button primary"
 						href="admin.html"
 					>
-						مشاهده سفارشات
+						مشاهده سفارش‌ها
 					</a>
 
 					<button
 						type="button"
 						id="refresh"
-						class="button primary"
+						class="button secondary"
 					>
 						بروزرسانی
 					</button>
@@ -186,18 +120,78 @@
 			</div>
 
 
-			<section class="panel admin-users-panel">
+			<section class="admin-user-summary">
 
-				<div class="table-wrap">
+				<div class="admin-stat">
 
-					<table class="table">
+					<div class="admin-stat-label">
+						تعداد کاربران
+					</div>
+
+					<strong id="users-total">
+						0
+					</strong>
+
+				</div>
+
+
+				<div class="admin-stat">
+
+					<div class="admin-stat-label">
+						مشتریان
+					</div>
+
+					<strong id="customers-total">
+						0
+					</strong>
+
+				</div>
+
+
+				<div class="admin-stat">
+
+					<div class="admin-stat-label">
+						ادمین‌ها
+					</div>
+
+					<strong id="admins-total">
+						0
+					</strong>
+
+				</div>
+
+			</section>
+
+
+			<section class="panel">
+
+				<div class="panel-heading">
+
+					<div>
+
+						<h2>
+							کاربران
+						</h2>
+
+						<p>
+							برای ایجاد سفارش، کاربر موردنظر را انتخاب کنید.
+						</p>
+
+					</div>
+
+				</div>
+
+
+				<div class="table-wrap admin-table-wrap">
+
+					<table class="table admin-table">
 
 						<thead>
 
 							<tr>
 
 								<th>
-									کاربر
+									نام
 								</th>
 
 								<th>
@@ -225,14 +219,26 @@
 						</thead>
 
 
-						<tbody id="users-body"></tbody>
+						<tbody id="users-body">
+
+							<tr>
+
+								<td
+									colspan="6"
+									class="table-loading"
+								>
+									در حال دریافت کاربران...
+								</td>
+
+							</tr>
+
+						</tbody>
 
 					</table>
 
 				</div>
 
 			</section>
-
 
 		</div>
 
@@ -242,9 +248,13 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 	<script src="js/config.js"></script>
+
 	<script src="js/supabase.js"></script>
+
 	<script src="js/auth.js"></script>
+
 	<script src="js/app.js"></script>
+
 	<script src="js/admin.js"></script>
 
 
@@ -252,28 +262,26 @@
 
 		document.addEventListener("DOMContentLoaded", () => {
 
-			const logout =
-				document.getElementById("logout");
+			const logoutButton = document.getElementById("logout");
 
-			const refresh =
-				document.getElementById("refresh");
+			const refreshButton = document.getElementById("refresh");
 
 
-			if (logout) {
+			if (logoutButton) {
 
-				logout.addEventListener(
+				logoutButton.addEventListener(
 					"click",
-					window.logout
+					logout
 				);
 
 			}
 
 
-			if (refresh) {
+			if (refreshButton) {
 
-				refresh.addEventListener(
+				refreshButton.addEventListener(
 					"click",
-					adminUsers
+					() => adminUsers()
 				);
 
 			}
