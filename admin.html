@@ -1,830 +1,154 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
-
 <head>
-
 	<meta charset="utf-8">
-
-	<meta
-		name="viewport"
-		content="width=device-width, initial-scale=1"
-	>
-
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#31526b">
 	<title>مدیریت سفارشات | T-Choob Video</title>
-
-	<link
-		rel="stylesheet"
-		href="css/style.css"
-	>
-
-	<link
-		rel="stylesheet"
-		href="css/admin.css"
-	>
-
+	<link rel="stylesheet" href="css/style.css">
 </head>
 
-
 <body class="admin-page">
-
-
-	<header class="site-header admin-header">
-
+	<header class="site-header">
 		<div class="container header-inner">
-
-
-			<a
-				class="brand"
-				href="admin.html"
-			>
-				T-Choob Video
+			<a class="brand" href="admin.html" aria-label="T-Choob Video">
+				<span class="brand-mark">TC</span>
+				<span>T-Choob Video</span>
 			</a>
 
-
-			<nav class="nav admin-main-nav">
-
-				<a
-					class="active"
-					href="admin.html"
-				>
-					<span class="nav-dot"></span>
-					سفارشات
-				</a>
-
-
-				<a href="admin-users.html">
-
-					<span class="nav-dot"></span>
-
-					کاربران
-
-				</a>
-
-
-				<button
-					type="button"
-					id="logout"
-				>
-					خروج
-				</button>
-
+			<nav class="nav admin-nav" aria-label="ناوبری مدیریت">
+				<a class="active" href="admin.html">سفارشات</a>
+				<a href="admin-users.html">کاربران</a>
+				<button id="logout" class="nav-button danger-text" type="button">خروج</button>
 			</nav>
 
-
-			<button
-				type="button"
-				id="theme"
-				class="theme"
-				aria-label="تغییر حالت نمایش"
-			>
-				حالت تاریک
-			</button>
-
-
+			<button id="theme" class="theme" type="button">حالت تاریک</button>
 		</div>
-
 	</header>
 
-
-
-	<main class="page admin-main">
-
-
-		<div class="container admin-container">
-
-
-			<!-- HERO -->
-
-			<section class="admin-hero">
-
-				<div class="admin-hero-copy">
-
-					<div class="admin-kicker">
-
-						<span class="admin-live-dot"></span>
-
-						پنل مدیریت T-Choob
-
-					</div>
-
-
-					<h1>
-						مدیریت سفارشات
-					</h1>
-
-
-					<p>
-						تمام سفارش‌ها، وضعیت تولید و مشتریان را
-						از یک فضای کاری یکپارچه مدیریت کنید.
-					</p>
-
+	<main class="page">
+		<div class="container">
+			<div class="page-head">
+				<div>
+					<span class="eyebrow">پنل مدیریت</span>
+					<h1>مدیریت سفارشات</h1>
+					<p class="page-subtitle">مدیریت، بررسی و پیگیری سفارش‌های ثبت‌شده</p>
 				</div>
 
+				<button id="refresh" class="button secondary" type="button">
+					<span aria-hidden="true">↻</span>
+					بروزرسانی
+				</button>
+			</div>
 
-				<div class="admin-hero-actions">
+			<section class="stats admin-stats" aria-label="آمار سفارشات">
+				<div class="stat">
+					<span>کل سفارش‌ها</span>
+					<strong id="total">0</strong>
+				</div>
+				<div class="stat">
+					<span>جدید</span>
+					<strong id="new">0</strong>
+				</div>
+				<div class="stat">
+					<span>در حال انجام</span>
+					<strong id="progress">0</strong>
+				</div>
+				<div class="stat">
+					<span>آماده تحویل</span>
+					<strong id="ready">0</strong>
+				</div>
+				<div class="stat stat-success">
+					<span>تکمیل شده</span>
+					<strong id="completed">0</strong>
+				</div>
+				<div class="stat stat-danger">
+					<span>لغو شده</span>
+					<strong id="cancelled">0</strong>
+				</div>
+			</section>
 
-
-					<a
-						class="button primary admin-primary-action"
-						href="admin-users.html"
-					>
-
-						<span class="button-icon">+</span>
-
-						ثبت سفارش جدید
-
-					</a>
-
-
-					<button
-						type="button"
-						id="refresh"
-						class="button secondary admin-refresh"
-					>
-
-						<span class="refresh-icon">↻</span>
-
-						<span>
-							بروزرسانی
-						</span>
-
+			<section class="admin-toolbar panel">
+				<div class="filter-tabs" role="tablist" aria-label="فیلتر سفارش‌ها">
+					<button class="filter-tab active" type="button" onclick="filterAdminOrders('all')">
+						همه
+						<span id="filter-all-count">0</span>
 					</button>
-
-
+					<button class="filter-tab" type="button" onclick="filterAdminOrders('active')">
+						در حال انجام
+						<span id="filter-active-count">0</span>
+					</button>
+					<button class="filter-tab" type="button" onclick="filterAdminOrders('completed')">
+						تکمیل شده
+						<span id="filter-completed-count">0</span>
+					</button>
+					<button class="filter-tab" type="button" onclick="filterAdminOrders('cancelled')">
+						لغو شده
+						<span id="filter-cancelled-count">0</span>
+					</button>
 				</div>
 
+				<label class="search-box">
+					<span class="search-icon" aria-hidden="true">⌕</span>
+					<input
+						id="orders-search"
+						type="search"
+						placeholder="جست‌وجو بر اساس شماره، عنوان، کاربر، ایمیل..."
+						autocomplete="off"
+						oninput="searchAdminOrders(this.value)"
+					>
+				</label>
 			</section>
 
-
-
-			<!-- STATS -->
-
-			<section class="admin-stats">
-
-
-				<article class="admin-stat admin-stat-main">
-
-					<div class="stat-icon stat-icon-blue">
-						<span>Σ</span>
+			<section class="panel orders-panel">
+				<div class="panel-header">
+					<div>
+						<h2 id="orders-caption">همه سفارش‌ها</h2>
+						<p>فهرست سفارش‌ها و وضعیت فعلی آن‌ها</p>
 					</div>
-
-
-					<div class="admin-stat-content">
-
-						<span class="admin-stat-label">
-							کل سفارش‌ها
-						</span>
-
-						<strong id="total">
-							0
-						</strong>
-
-						<small>
-							تمام سفارش‌های ثبت‌شده
-						</small>
-
-					</div>
-
-				</article>
-
-
-
-				<article class="admin-stat">
-
-					<div class="stat-icon stat-icon-orange">
-						<span>!</span>
-					</div>
-
-
-					<div class="admin-stat-content">
-
-						<span class="admin-stat-label">
-							سفارش‌های جدید
-						</span>
-
-						<strong id="new">
-							0
-						</strong>
-
-						<small>
-							نیازمند بررسی
-						</small>
-
-					</div>
-
-				</article>
-
-
-
-				<article class="admin-stat">
-
-					<div class="stat-icon stat-icon-green">
-						<span>↗</span>
-					</div>
-
-
-					<div class="admin-stat-content">
-
-						<span class="admin-stat-label">
-							در حال انجام
-						</span>
-
-						<strong id="progress">
-							0
-						</strong>
-
-						<small>
-							در چرخه تولید
-						</small>
-
-					</div>
-
-				</article>
-
-
-
-				<article class="admin-stat">
-
-					<div class="stat-icon stat-icon-yellow">
-						<span>✓</span>
-					</div>
-
-
-					<div class="admin-stat-content">
-
-						<span class="admin-stat-label">
-							آماده تحویل
-						</span>
-
-						<strong id="ready">
-							0
-						</strong>
-
-						<small>
-							منتظر تحویل
-						</small>
-
-					</div>
-
-				</article>
-
-
-
-				<article class="admin-stat">
-
-					<div class="stat-icon stat-icon-teal">
-						<span>✓</span>
-					</div>
-
-
-					<div class="admin-stat-content">
-
-						<span class="admin-stat-label">
-							تکمیل شده
-						</span>
-
-						<strong id="completed">
-							0
-						</strong>
-
-						<small>
-							سفارش‌های پایان‌یافته
-						</small>
-
-					</div>
-
-				</article>
-
-
-
-				<article class="admin-stat">
-
-					<div class="stat-icon stat-icon-red">
-						<span>×</span>
-					</div>
-
-
-					<div class="admin-stat-content">
-
-						<span class="admin-stat-label">
-							لغو شده
-						</span>
-
-						<strong id="cancelled">
-							0
-						</strong>
-
-						<small>
-							سفارش‌های لغوشده
-						</small>
-
-					</div>
-
-				</article>
-
-
+					<span id="visible-orders-count" class="result-count">0 سفارش</span>
+				</div>
+
+				<div class="table-wrap">
+					<table class="table admin-table">
+						<thead>
+							<tr>
+								<th>شماره</th>
+								<th>عنوان</th>
+								<th>کاربر</th>
+								<th>مدل</th>
+								<th>وضعیت</th>
+								<th>تاریخ</th>
+								<th>عملیات</th>
+							</tr>
+						</thead>
+						<tbody id="orders-body">
+							<tr>
+								<td colspan="7" class="table-loading">
+									<span class="loading-spinner"></span>
+									در حال دریافت سفارش‌ها...
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
 			</section>
-
-
-
-			<!-- MAIN WORKSPACE -->
-
-			<section class="admin-layout">
-
-
-				<!-- RIGHT SIDEBAR -->
-
-				<aside class="admin-sidebar panel">
-
-
-					<div class="sidebar-heading">
-
-						<div>
-
-							<span class="sidebar-eyebrow">
-								Workspace
-							</span>
-
-							<h2>
-								مرکز سفارشات
-							</h2>
-
-						</div>
-
-
-						<span class="sidebar-menu-icon">
-							•••
-						</span>
-
-					</div>
-
-
-
-					<div class="sidebar-section">
-
-
-						<div class="sidebar-section-title">
-							نمایش سفارش‌ها
-						</div>
-
-
-						<div class="filter-list">
-
-
-							<button
-								type="button"
-								class="filter-button active"
-								data-filter="all"
-							>
-
-								<span class="filter-button-info">
-
-									<span class="filter-icon filter-icon-all">
-										◈
-									</span>
-
-									<span>
-										همه سفارش‌ها
-									</span>
-
-								</span>
-
-
-								<strong id="filter-all-count">
-									0
-								</strong>
-
-							</button>
-
-
-
-							<button
-								type="button"
-								class="filter-button"
-								data-filter="active"
-							>
-
-								<span class="filter-button-info">
-
-									<span class="filter-icon filter-icon-active">
-										↗
-									</span>
-
-									<span>
-										در حال انجام
-									</span>
-
-								</span>
-
-
-								<strong id="filter-active-count">
-									0
-								</strong>
-
-							</button>
-
-
-
-							<button
-								type="button"
-								class="filter-button"
-								data-filter="completed"
-							>
-
-								<span class="filter-button-info">
-
-									<span class="filter-icon filter-icon-completed">
-										✓
-									</span>
-
-									<span>
-										تکمیل شده
-									</span>
-
-								</span>
-
-
-								<strong id="filter-completed-count">
-									0
-								</strong>
-
-							</button>
-
-
-
-							<button
-								type="button"
-								class="filter-button"
-								data-filter="cancelled"
-							>
-
-								<span class="filter-button-info">
-
-									<span class="filter-icon filter-icon-cancelled">
-										×
-									</span>
-
-									<span>
-										لغو شده
-									</span>
-
-								</span>
-
-
-								<strong id="filter-cancelled-count">
-									0
-								</strong>
-
-							</button>
-
-
-						</div>
-
-					</div>
-
-
-
-					<div class="sidebar-divider"></div>
-
-
-
-					<div class="sidebar-section">
-
-
-						<div class="sidebar-section-title">
-							جستجو
-						</div>
-
-
-						<label class="search-box">
-
-							<span class="search-icon">
-								⌕
-							</span>
-
-
-							<input
-								type="search"
-								id="order-search"
-								placeholder="شماره، عنوان یا مشتری..."
-								autocomplete="off"
-							>
-
-
-							<span
-								class="search-shortcut"
-								aria-hidden="true"
-							>
-								/
-							</span>
-
-						</label>
-
-
-					</div>
-
-
-
-					<div class="sidebar-divider"></div>
-
-
-
-					<div class="sidebar-help-card">
-
-						<div class="sidebar-help-icon">
-							✦
-						</div>
-
-
-						<div>
-
-							<strong>
-								فضای کاری سفارش
-							</strong>
-
-							<p>
-								با باز کردن هر سفارش به اطلاعات،
-								گفتگو، فایل‌ها و تاریخچه دسترسی دارید.
-							</p>
-
-						</div>
-
-					</div>
-
-
-				</aside>
-
-
-
-				<!-- ORDERS -->
-
-				<section class="admin-content panel">
-
-
-					<div class="panel-heading admin-panel-heading">
-
-
-						<div>
-
-							<div class="panel-heading-title">
-
-								<span class="panel-live"></span>
-
-								<h2>
-									سفارش‌ها
-								</h2>
-
-							</div>
-
-
-							<p id="orders-caption">
-								همه سفارش‌ها
-							</p>
-
-						</div>
-
-
-						<div class="panel-heading-meta">
-
-							<span
-								id="visible-orders-count"
-								class="orders-count"
-							>
-								0 سفارش
-							</span>
-
-						</div>
-
-
-					</div>
-
-
-
-					<div class="table-wrap admin-table-wrap">
-
-
-						<table class="table admin-table">
-
-
-							<thead>
-
-								<tr>
-
-									<th>
-										شماره
-									</th>
-
-									<th>
-										عنوان
-									</th>
-
-									<th>
-										مشتری
-									</th>
-
-									<th>
-										مدل تولید
-									</th>
-
-									<th>
-										وضعیت
-									</th>
-
-									<th>
-										تاریخ
-									</th>
-
-									<th>
-										عملیات
-									</th>
-
-								</tr>
-
-							</thead>
-
-
-
-							<tbody id="orders-body">
-
-								<tr>
-
-									<td
-										colspan="7"
-										class="table-loading"
-									>
-
-										<span class="loading-spinner"></span>
-
-										در حال دریافت سفارش‌ها...
-
-									</td>
-
-								</tr>
-
-							</tbody>
-
-
-						</table>
-
-
-					</div>
-
-
-				</section>
-
-
-			</section>
-
-
 		</div>
-
 	</main>
 
-
-
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 	<script src="js/config.js"></script>
-
 	<script src="js/supabase.js"></script>
-
 	<script src="js/auth.js"></script>
-
 	<script src="js/app.js"></script>
-
 	<script src="js/admin.js"></script>
 
-
-
 	<script>
-
 		document.addEventListener("DOMContentLoaded", () => {
-
-
-			const logoutButton =
-				document.getElementById("logout");
-
-
-			const refreshButton =
-				document.getElementById("refresh");
-
-
-			if (logoutButton) {
-
-				logoutButton.addEventListener(
-					"click",
-					logout
-				);
-
-			}
-
-
-			if (refreshButton) {
-
-				refreshButton.addEventListener(
-					"click",
-					() => {
-
-						refreshButton.classList.add("is-loading");
-
-						Promise.resolve(
-							adminOrders()
-						).finally(() => {
-
-							setTimeout(() => {
-
-								refreshButton.classList.remove(
-									"is-loading"
-								);
-
-							}, 350);
-
-						});
-
-					}
-				);
-
-			}
-
-
-
-			document
-				.querySelectorAll(".filter-button")
-				.forEach(button => {
-
-
-					button.addEventListener(
-						"click",
-						() => {
-
-
-							document
-								.querySelectorAll(".filter-button")
-								.forEach(item => {
-
-									item.classList.remove(
-										"active"
-									);
-
-								});
-
-
-							button.classList.add("active");
-
-
-							if (
-								typeof window.filterAdminOrders ===
-								"function"
-							) {
-
-								window.filterAdminOrders(
-									button.dataset.filter
-								);
-
-							}
-
-						}
-					);
-
-				});
-
-
-
-			const search =
-				document.getElementById("order-search");
-
-
-			if (search) {
-
-				search.addEventListener(
-					"input",
-					event => {
-
-
-						if (
-							typeof window.searchAdminOrders ===
-							"function"
-						) {
-
-							window.searchAdminOrders(
-								event.target.value
-							);
-
-						}
-
-					}
-				);
-
-			}
-
-
+			document.getElementById("logout")?.addEventListener("click", logout);
+			document.getElementById("refresh")?.addEventListener("click", adminOrders);
 			adminOrders();
-
 		});
-
 	</script>
-
-
 </body>
-
 </html>
