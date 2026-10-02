@@ -1,3098 +1,3540 @@
 /* =========================================================
-   T-Choob Video
-   Admin Panel
+   T-CHOOB ADMIN ENGINE
    ========================================================= */
 
+let adminOrderData = null;
+let adminOrderMessages = [];
+let adminOrderFiles = [];
+let adminOrderHistory = [];
 
-/* ---------------------------------------------------------
-   Helpers
-   --------------------------------------------------------- */
+let selectedChatFiles = [];
+let mediaRecorder = null;
+let recordingChunks = [];
+let isRecording = false;
 
-function adminEscape(value) {
 
-	if (value === null || value === undefined) {
-		return "";
-	}
+/* =========================================================
+   HELPERS
+   ========================================================= */
 
-	return String(value)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
+function adminEsc(value) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "";
+    }
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
 }
 
 
 function adminDate(value) {
 
-	if (!value) {
-		return "-";
-	}
+    if (!value) {
+        return "-";
+    }
 
-	try {
+    const date = new Date(value);
 
-		return new Intl.DateTimeFormat(
-			"fa-IR",
-			{
-				dateStyle: "medium",
-				timeStyle: "short"
-			}
-		).format(new Date(value));
+    if (Number.isNaN(date.getTime())) {
+        return "-";
+    }
 
-	} catch {
-
-		return value;
-
-	}
-
-}
-
-
-function adminCustomerName(profile) {
-
-	if (!profile) {
-		return "بدون نام";
-	}
-
-	const name = `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
-
-	return name || "بدون نام";
+    return date.toLocaleString(
+        "fa-IR",
+        {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit"
+        }
+    );
 
 }
 
 
-function adminStatusText(status) {
+function showToast(
+    text,
+    type = "success"
+) {
 
-	const values = {
+    const container =
+        document.getElementById(
+            "toast-container"
+        );
 
-		new: "جدید",
+    if (!container) {
+        return;
+    }
 
-		review: "در حال بررسی",
+    const item =
+        document.createElement("div");
 
-		approved: "تأیید شده",
+    item.className =
+        `toast ${type}`;
 
-		production: "در حال تولید",
+    item.textContent = text;
 
-		editing: "در حال تدوین",
+    container.appendChild(item);
 
-		revision: "نیازمند اصلاح",
-
-		ready: "آماده تحویل",
-
-		completed: "تکمیل شده",
-
-		cancelled: "لغو شده"
-
-	};
-
-	return values[status] || status || "-";
-
-}
-
-
-function adminModelText(model) {
-
-	const values = {
-
-		edit_only: "فقط تدوین",
-
-		voice_ready: "گویندگی آماده است",
-
-		visual_ready: "تصویر آماده است",
-
-		script_ready: "سناریو آماده است",
-
-		full_production: "تولید کامل"
-
-	};
-
-	return values[model] || model || "-";
+    setTimeout(
+        () => {
+            item.remove();
+        },
+        3200
+    );
 
 }
 
 
-function adminPaymentText(status) {
+function modelText(value) {
 
-	const values = {
+    const map = {
 
-		unpaid: "پرداخت نشده",
+        edit_only:
+            "فقط تدوین",
 
-		pending: "در انتظار پرداخت",
+        voice_ready:
+            "صوت آماده است",
 
-		paid: "پرداخت شده",
+        visual_ready:
+            "تصویر آماده است",
 
-		refunded: "برگشت داده شده"
+        script_ready:
+            "سناریو آماده است",
 
-	};
+        full_production:
+            "تولید کامل"
 
-	return values[status] || status || "-";
+    };
 
-}
-
-
-function adminRoleText(role) {
-
-	if (role === "admin") {
-		return "ادمین";
-	}
-
-	return "مشتری";
+    return map[value] || value || "-";
 
 }
 
 
-function adminNeedsText(order) {
+function statusText(value) {
 
-	const result = [];
+    const map = {
 
-	if (order.needs_script) {
-		result.push("سناریو");
-	}
+        new:
+            "جدید",
 
-	if (order.needs_voice) {
-		result.push("صوت");
-	}
+        review:
+            "در حال بررسی",
 
-	if (order.needs_visuals) {
-		result.push("تصویر");
-	}
+        approved:
+            "تأیید شده",
 
-	if (order.needs_editing) {
-		result.push("تدوین");
-	}
+        production:
+            "در حال تولید",
 
-	return result.length
-		? result.join("، ")
-		: "بدون مورد مشخص";
+        editing:
+            "در حال تدوین",
+
+        revision:
+            "نیازمند اصلاح",
+
+        ready:
+            "آماده تحویل",
+
+        completed:
+            "تکمیل شده",
+
+        cancelled:
+            "لغو شده"
+
+    };
+
+    return map[value] || value || "-";
 
 }
 
 
-/* ---------------------------------------------------------
-   Admin Orders
-   --------------------------------------------------------- */
+/* =========================================================
+   THEME
+   ========================================================= */
 
-let adminOrdersData = [];
+function applyAdminTheme() {
 
-let currentAdminFilter = "all";
+    const dark =
+        localStorage.getItem(
+            "tchoob-admin-theme"
+        ) === "dark";
 
-let currentAdminSearch = "";
+    document.documentElement
+        .classList
+        .toggle(
+            "dark-mode",
+            dark
+        );
 
+}
+
+
+function toggleAdminTheme() {
+
+    const dark =
+        document.documentElement
+            .classList
+            .contains("dark-mode");
+
+    localStorage.setItem(
+        "tchoob-admin-theme",
+        dark
+            ? "light"
+            : "dark"
+    );
+
+    applyAdminTheme();
+
+}
+
+
+applyAdminTheme();
+
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+async function logout() {
+
+    try {
+
+        await window.db.auth.signOut();
+
+    } finally {
+
+        window.location.replace(
+            "login.html"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   ADMIN ORDERS
+   ========================================================= */
 
 async function adminOrders() {
 
-	const authData = await requireUser(true);
+    const auth =
+        await requireUser(true);
 
-	if (!authData) {
-		return;
-	}
-
-
-	const body = document.getElementById("orders-body");
-
-	if (!body) {
-		return;
-	}
+    if (!auth) {
+        return;
+    }
 
 
-	body.innerHTML = `
-		<tr>
-			<td colspan="7" class="table-loading">
-				در حال دریافت سفارش‌ها...
-			</td>
-		</tr>
-	`;
+    const body =
+        document.getElementById(
+            "orders-body"
+        );
+
+    if (!body) {
+        return;
+    }
 
 
-	const { data, error } = await window.db
-		.from("video_orders")
-		.select(`
-			*,
-			profiles:customer_id(
-				id,
-				first_name,
-				last_name,
-				email,
-				phone
-			)
-		`)
-		.order("created_at", {
-			ascending: false
-		});
+    const {
+        data,
+        error
+    } =
+        await window.db
+            .from("video_orders")
+            .select(
+                "*,profiles:customer_id(first_name,last_name,email,phone)"
+            )
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
 
 
-	if (error) {
+    if (error) {
 
-		console.error("ADMIN ORDERS ERROR:", error);
+        console.error(error);
 
-		body.innerHTML = `
-			<tr>
-				<td colspan="7" class="table-error">
-					دریافت سفارش‌ها انجام نشد.
-					<br>
-					<span>${adminEscape(error.message)}</span>
-				</td>
-			</tr>
-		`;
+        body.innerHTML =
+            `<tr>
+                <td colspan="7">
+                    دریافت سفارش‌ها انجام نشد.
+                </td>
+            </tr>`;
 
-		return;
-	}
+        return;
+    }
 
 
-	adminOrdersData = data || [];
+    document.getElementById("total")
+        ?.replaceChildren(
+            document.createTextNode(
+                data.length
+            )
+        );
 
 
-	updateAdminStats();
+    document.getElementById("new")
+        ?.replaceChildren(
+            document.createTextNode(
+                data.filter(
+                    x =>
+                        x.status === "new"
+                ).length
+            )
+        );
 
 
-	renderAdminOrders();
+    document.getElementById("progress")
+        ?.replaceChildren(
+            document.createTextNode(
+                data.filter(
+                    x =>
+                        [
+                            "approved",
+                            "production",
+                            "editing"
+                        ].includes(
+                            x.status
+                        )
+                ).length
+            )
+        );
+
+
+    document.getElementById("ready")
+        ?.replaceChildren(
+            document.createTextNode(
+                data.filter(
+                    x =>
+                        x.status === "ready"
+                ).length
+            )
+        );
+
+
+    body.innerHTML =
+        data
+            .map(order => {
+
+                const profile =
+                    order.profiles || {};
+
+                const customer =
+                    [
+                        profile.first_name,
+                        profile.last_name
+                    ]
+                        .filter(Boolean)
+                        .join(" ")
+                        .trim()
+                    ||
+                    "بدون نام";
+
+
+                return `
+                    <tr>
+
+                        <td>
+                            ${adminEsc(order.order_number)}
+                        </td>
+
+                        <td>
+                            ${adminEsc(order.title)}
+                        </td>
+
+                        <td>
+                            ${adminEsc(customer)}
+                        </td>
+
+                        <td>
+                            ${adminEsc(
+                                modelText(
+                                    order.production_model
+                                )
+                            )}
+                        </td>
+
+                        <td>
+
+                            <span
+                                class="status status-${adminEsc(
+                                    order.status
+                                )}"
+                            >
+                                ${adminEsc(
+                                    statusText(
+                                        order.status
+                                    )
+                                )}
+                            </span>
+
+                        </td>
+
+                        <td>
+                            ${adminDate(
+                                order.created_at
+                            )}
+                        </td>
+
+                        <td>
+
+                            <a
+                                class="button secondary"
+                                href="admin-order.html?id=${encodeURIComponent(order.id)}"
+                            >
+                                مدیریت
+                            </a>
+
+                        </td>
+
+                    </tr>
+                `;
+
+            })
+            .join("")
+        ||
+        `<tr>
+            <td colspan="7">
+                سفارشی وجود ندارد.
+            </td>
+        </tr>`;
 
 }
 
 
-function updateAdminStats() {
-
-	const total = adminOrdersData.length;
-
-	const newOrders = adminOrdersData.filter(
-		order => order.status === "new"
-	).length;
-
-
-	const progress = adminOrdersData.filter(
-		order =>
-			[
-				"review",
-				"approved",
-				"production",
-				"editing",
-				"revision"
-			].includes(order.status)
-	).length;
-
-
-	const ready = adminOrdersData.filter(
-		order => order.status === "ready"
-	).length;
-
-
-	const completed = adminOrdersData.filter(
-		order => order.status === "completed"
-	).length;
-
-
-	const cancelled = adminOrdersData.filter(
-		order => order.status === "cancelled"
-	).length;
-
-
-	const setText = (id, value) => {
-
-		const element = document.getElementById(id);
-
-		if (element) {
-			element.textContent = value;
-		}
-
-	};
-
-
-	setText("total", total);
-
-	setText("new", newOrders);
-
-	setText("progress", progress);
-
-	setText("ready", ready);
-
-	setText("completed", completed);
-
-	setText("cancelled", cancelled);
-
-
-	setText("filter-all-count", total);
-
-	setText(
-		"filter-active-count",
-		total - completed - cancelled
-	);
-
-	setText(
-		"filter-completed-count",
-		completed
-	);
-
-	setText(
-		"filter-cancelled-count",
-		cancelled
-	);
-
-}
-
-
-function getFilteredAdminOrders() {
-
-	let result = [...adminOrdersData];
-
-
-	if (currentAdminFilter === "active") {
-
-		result = result.filter(
-			order =>
-				order.status !== "completed" &&
-				order.status !== "cancelled"
-		);
-
-	}
-
-
-	if (currentAdminFilter === "completed") {
-
-		result = result.filter(
-			order => order.status === "completed"
-		);
-
-	}
-
-
-	if (currentAdminFilter === "cancelled") {
-
-		result = result.filter(
-			order => order.status === "cancelled"
-		);
-
-	}
-
-
-	const search = currentAdminSearch
-		.trim()
-		.toLowerCase();
-
-
-	if (search) {
-
-		result = result.filter(order => {
-
-			const profile = order.profiles || {};
-
-			const customer = adminCustomerName(profile);
-
-			const email = profile.email || "";
-
-			const number = order.order_number || "";
-
-			const title = order.title || "";
-
-			const subject = order.subject || "";
-
-
-			return [
-
-				customer,
-				email,
-				number,
-				title,
-				subject
-
-			]
-				.join(" ")
-				.toLowerCase()
-				.includes(search);
-
-		});
-
-	}
-
-
-	return result;
-
-}
-
-
-function renderAdminOrders() {
-
-	const body = document.getElementById("orders-body");
-
-	if (!body) {
-		return;
-	}
-
-
-	const data = getFilteredAdminOrders();
-
-
-	const caption = document.getElementById("orders-caption");
-
-	if (caption) {
-
-		const labels = {
-
-			all: "همه سفارش‌ها",
-
-			active: "سفارش‌های در حال انجام",
-
-			completed: "سفارش‌های تکمیل شده",
-
-			cancelled: "سفارش‌های لغو شده"
-
-		};
-
-		caption.textContent =
-			`${labels[currentAdminFilter] || "سفارش‌ها"} — ${data.length} مورد`;
-
-	}
-
-
-	if (!data.length) {
-
-		body.innerHTML = `
-			<tr>
-				<td
-					colspan="7"
-					class="table-empty"
-				>
-					سفارشی مطابق فیلتر انتخاب‌شده وجود ندارد.
-				</td>
-			</tr>
-		`;
-
-		return;
-	}
-
-
-	body.innerHTML = data.map(order => {
-
-		const profile = order.profiles || {};
-
-		const customer = adminCustomerName(profile);
-
-
-		return `
-			<tr>
-
-				<td>
-					<div class="order-number">
-						${adminEscape(order.order_number)}
-					</div>
-				</td>
-
-
-				<td>
-
-					<a
-						class="order-title-link"
-						href="admin-order.html?id=${encodeURIComponent(order.id)}"
-					>
-						${adminEscape(order.title)}
-					</a>
-
-					${order.subject ? `
-						<div class="table-subtext">
-							${adminEscape(order.subject)}
-						</div>
-					` : ""}
-
-				</td>
-
-
-				<td>
-
-					<div class="customer-cell">
-
-						<div class="customer-avatar">
-							${adminEscape(
-								(customer.charAt(0) || "؟").toUpperCase()
-							)}
-						</div>
-
-						<div>
-
-							<div class="customer-name">
-								${adminEscape(customer)}
-							</div>
-
-							<div class="table-subtext">
-								${adminEscape(profile.email || "-")}
-							</div>
-
-						</div>
-
-					</div>
-
-				</td>
-
-
-				<td>
-					${adminEscape(
-						adminModelText(order.production_model)
-					)}
-				</td>
-
-
-				<td>
-
-					<span
-						class="status status-${adminEscape(order.status)}"
-					>
-						${adminEscape(
-							adminStatusText(order.status)
-						)}
-					</span>
-
-				</td>
-
-
-				<td>
-					${adminDate(order.created_at)}
-				</td>
-
-
-				<td>
-
-					<a
-						class="button secondary small-button"
-						href="admin-order.html?id=${encodeURIComponent(order.id)}"
-					>
-						مشاهده
-					</a>
-
-				</td>
-
-			</tr>
-		`;
-
-	}).join("");
-
-}
-
-
-window.filterAdminOrders = function(filter) {
-
-	currentAdminFilter = filter || "all";
-
-	renderAdminOrders();
-
-};
-
-
-window.searchAdminOrders = function(value) {
-
-	currentAdminSearch = value || "";
-
-	renderAdminOrders();
-
-};
-
-
-/* ---------------------------------------------------------
-   Admin Users
-   --------------------------------------------------------- */
-
-let adminUsersData = [];
-
+/* =========================================================
+   ADMIN USERS
+   ========================================================= */
 
 async function adminUsers() {
 
-	const authData = await requireUser(true);
+    const auth =
+        await requireUser(true);
 
-	if (!authData) {
-		return;
-	}
-
-
-	const body = document.getElementById("users-body");
-
-	if (!body) {
-		return;
-	}
+    if (!auth) {
+        return;
+    }
 
 
-	body.innerHTML = `
-		<tr>
-			<td colspan="6" class="table-loading">
-				در حال دریافت کاربران...
-			</td>
-		</tr>
-	`;
+    const body =
+        document.getElementById(
+            "users-body"
+        );
+
+    if (!body) {
+        return;
+    }
 
 
-	const { data, error } = await window.db
-		.from("profiles")
-		.select("*")
-		.order("created_at", {
-			ascending: false
-		});
+    const {
+        data,
+        error
+    } =
+        await window.db
+            .from("profiles")
+            .select("*")
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
 
 
-	if (error) {
+    if (error) {
 
-		console.error("ADMIN USERS ERROR:", error);
+        body.innerHTML =
+            `<tr>
+                <td colspan="6">
+                    دریافت کاربران انجام نشد.
+                </td>
+            </tr>`;
 
-		body.innerHTML = `
-			<tr>
-				<td colspan="6" class="table-error">
-					دریافت کاربران انجام نشد.
-					<br>
-					<span>${adminEscape(error.message)}</span>
-				</td>
-			</tr>
-		`;
-
-		return;
-	}
+        return;
+    }
 
 
-	adminUsersData = data || [];
+    body.innerHTML =
+        data
+            .map(user => {
+
+                const name =
+                    [
+                        user.first_name,
+                        user.last_name
+                    ]
+                        .filter(Boolean)
+                        .join(" ")
+                        .trim()
+                    ||
+                    "بدون نام";
 
 
-	const customers = adminUsersData.filter(
-		user => user.role !== "admin"
-	).length;
+                return `
+                    <tr>
 
+                        <td>
+                            ${adminEsc(name)}
+                        </td>
 
-	const admins = adminUsersData.filter(
-		user => user.role === "admin"
-	).length;
+                        <td>
+                            ${adminEsc(
+                                user.email || "-"
+                            )}
+                        </td>
 
+                        <td>
+                            ${adminEsc(
+                                user.phone || "-"
+                            )}
+                        </td>
 
-	const totalElement = document.getElementById("users-total");
+                        <td>
+                            ${adminEsc(
+                                user.role || "-"
+                            )}
+                        </td>
 
-	const customersElement = document.getElementById("customers-total");
+                        <td>
+                            ${adminDate(
+                                user.created_at
+                            )}
+                        </td>
 
-	const adminsElement = document.getElementById("admins-total");
+                        <td>
 
+                            <a
+                                class="button secondary"
+                                href="admin-order.html?customer=${encodeURIComponent(user.id)}"
+                            >
+                                ثبت سفارش
+                            </a>
 
-	if (totalElement) {
-		totalElement.textContent = adminUsersData.length;
-	}
+                        </td>
 
+                    </tr>
+                `;
 
-	if (customersElement) {
-		customersElement.textContent = customers;
-	}
-
-
-	if (adminsElement) {
-		adminsElement.textContent = admins;
-	}
-
-
-	if (!adminUsersData.length) {
-
-		body.innerHTML = `
-			<tr>
-				<td colspan="6" class="table-empty">
-					کاربری وجود ندارد.
-				</td>
-			</tr>
-		`;
-
-		return;
-	}
-
-
-	body.innerHTML = adminUsersData.map(user => {
-
-		const name = adminCustomerName(user);
-
-		return `
-			<tr>
-
-				<td>
-
-					<div class="customer-cell">
-
-						<div class="customer-avatar">
-							${adminEscape(
-								(name.charAt(0) || "؟").toUpperCase()
-							)}
-						</div>
-
-						<div class="customer-name">
-							${adminEscape(name)}
-						</div>
-
-					</div>
-
-				</td>
-
-
-				<td>
-					${adminEscape(user.email || "-")}
-				</td>
-
-
-				<td>
-					${adminEscape(user.phone || "-")}
-				</td>
-
-
-				<td>
-
-					<span class="role-badge role-${adminEscape(user.role)}">
-						${adminEscape(
-							adminRoleText(user.role)
-						)}
-					</span>
-
-				</td>
-
-
-				<td>
-					${adminDate(user.created_at)}
-				</td>
-
-
-				<td>
-
-					<a
-						class="button primary small-button"
-						href="admin-order.html?customer=${encodeURIComponent(user.id)}"
-					>
-						ثبت سفارش
-					</a>
-
-				</td>
-
-			</tr>
-		`;
-
-	}).join("");
+            })
+            .join("");
 
 }
 
 
-/* ---------------------------------------------------------
-   Admin Order Page
-   --------------------------------------------------------- */
+/* =========================================================
+   LOAD ORDER
+   ========================================================= */
 
 async function adminOrder() {
 
-	const authData = await requireUser(true);
+    const auth =
+        await requireUser(true);
 
-	if (!authData) {
-		return;
-	}
-
-
-	const root = document.getElementById("root");
-
-	if (!root) {
-		return;
-	}
+    if (!auth) {
+        return;
+    }
 
 
-	const params = new URLSearchParams(location.search);
+    const root =
+        document.getElementById(
+            "root"
+        );
 
-	const orderId = params.get("id");
-
-	const customerId = params.get("customer");
-
-
-	if (orderId) {
-
-		await renderAdminOrderDetails(
-			root,
-			orderId,
-			authData
-		);
-
-		return;
-
-	}
+    if (!root) {
+        return;
+    }
 
 
-	await renderAdminOrderCreate(
-		root,
-		customerId,
-		authData
-	);
+    const params =
+        new URLSearchParams(
+            location.search
+        );
+
+
+    const id =
+        params.get("id");
+
+
+    if (!id) {
+
+        root.innerHTML = `
+            <section class="admin-card">
+
+                <div class="admin-card-body">
+
+                    <div class="empty">
+
+                        برای مدیریت یک سفارش،
+                        ابتدا یک سفارش را انتخاب کنید.
+
+                    </div>
+
+                </div>
+
+            </section>
+        `;
+
+        return;
+    }
+
+
+    const {
+        data: order,
+        error: orderError
+    } =
+        await window.db
+            .from("video_orders")
+            .select(
+                "*,profiles:customer_id(first_name,last_name,email,phone,avatar_url,address)"
+            )
+            .eq(
+                "id",
+                id
+            )
+            .single();
+
+
+    if (
+        orderError ||
+        !order
+    ) {
+
+        root.innerHTML =
+            `<div class="empty">
+                سفارش پیدا نشد.
+            </div>`;
+
+        return;
+    }
+
+
+    adminOrderData = order;
+
+
+    const [
+        messagesResult,
+        filesResult,
+        historyResult
+    ] =
+        await Promise.all([
+
+            window.db
+                .from("order_messages")
+                .select("*")
+                .eq(
+                    "order_id",
+                    id
+                )
+                .order(
+                    "created_at",
+                    {
+                        ascending: true
+                    }
+                ),
+
+            window.db
+                .from("order_files")
+                .select("*")
+                .eq(
+                    "order_id",
+                    id
+                )
+                .order(
+                    "created_at",
+                    {
+                        ascending: true
+                    }
+                ),
+
+            window.db
+                .from("order_status_history")
+                .select("*")
+                .eq(
+                    "order_id",
+                    id
+                )
+                .order(
+                    "created_at",
+                    {
+                        ascending: true
+                    }
+                )
+
+        ]);
+
+
+    adminOrderMessages =
+        messagesResult.data || [];
+
+
+    adminOrderFiles =
+        filesResult.data || [];
+
+
+    adminOrderHistory =
+        historyResult.data || [];
+
+
+    renderOrderWorkspace(
+        auth.user
+    );
 
 }
 
 
-/* ---------------------------------------------------------
-   Create Order
-   --------------------------------------------------------- */
+/* =========================================================
+   ORDER WORKSPACE
+   ========================================================= */
 
-async function renderAdminOrderCreate(
-	root,
-	customerId,
-	authData
+function renderOrderWorkspace(
+    currentUser
 ) {
 
-	let customers = [];
+    const root =
+        document.getElementById(
+            "root"
+        );
 
+    const order =
+        adminOrderData;
 
-	const { data, error } = await window.db
-		.from("profiles")
-		.select(`
-			id,
-			email,
-			first_name,
-			last_name,
-			phone,
-			role
-		`)
-		.order("created_at", {
-			ascending: false
-		});
+    const profile =
+        order.profiles || {};
 
 
-	if (error) {
+    const customerName =
+        [
+            profile.first_name,
+            profile.last_name
+        ]
+            .filter(Boolean)
+            .join(" ")
+            .trim()
+        ||
+        "کاربر";
 
-		root.innerHTML = `
-			<div class="empty">
-				دریافت کاربران انجام نشد.
-				<br>
-				${adminEscape(error.message)}
-			</div>
-		`;
 
-		return;
-	}
+    const avatar =
+        profile.avatar_url
+        ||
+        "";
 
 
-	customers = (data || []).filter(
-		user => user.role !== "admin"
-	);
+    root.innerHTML = `
 
+        <div class="order-workspace">
 
-	const selectedCustomer =
-		customers.find(
-			user => user.id === customerId
-		) || null;
 
+            <div class="order-workspace-main">
 
-	root.innerHTML = `
 
-		<div class="admin-topbar">
+                <section class="order-hero">
 
-			<div>
+                    <div class="order-hero-content">
 
-				<span class="eyebrow">
-					سفارش جدید
-				</span>
 
-				<h1>
-					ثبت سفارش برای مشتری
-				</h1>
+                        <div>
 
-				<p class="admin-subtitle">
-					یک سفارش جدید برای یکی از کاربران موجود ایجاد کنید.
-				</p>
+                            <span class="eyebrow">
+                                ${adminEsc(
+                                    order.order_number
+                                )}
+                            </span>
 
-			</div>
+                            <h1>
+                                ${adminEsc(
+                                    order.title
+                                )}
+                            </h1>
 
+                            <span class="order-number">
+                                ${adminEsc(
+                                    order.subject
+                                )}
+                            </span>
 
-			<a
-				class="button secondary"
-				href="admin-users.html"
-			>
-				بازگشت به کاربران
-			</a>
+                        </div>
 
-		</div>
 
+                        <div class="order-customer">
 
-		<form
-			id="admin-create-order-form"
-			class="admin-create-layout"
-		>
+                            ${
+                                avatar
+                                ?
+                                `
+                                <img
+                                    class="order-customer-avatar"
+                                    src="${adminEsc(avatar)}"
+                                    alt=""
+                                >
+                                `
+                                :
+                                `
+                                <div class="order-customer-avatar">
+                                    👤
+                                </div>
+                                `
+                            }
 
 
-			<section class="panel admin-form-panel">
+                            <div>
 
-				<div class="panel-heading">
+                                <small>
+                                    مشتری
+                                </small>
 
-					<div>
+                                <strong>
+                                    ${adminEsc(
+                                        customerName
+                                    )}
+                                </strong>
 
-						<h2>
-							اطلاعات سفارش
-						</h2>
+                            </div>
 
-						<p>
-							اطلاعات اصلی پروژه را وارد کنید.
-						</p>
+                        </div>
 
-					</div>
 
-				</div>
+                    </div>
 
+                </section>
 
-				<div class="form-grid">
 
+                <div
+                    id="order-tabs"
+                    style="margin-top:16px"
+                >
 
-					<div class="form-field full">
 
-						<label for="customer_id">
-							مشتری
-						</label>
+                    ${renderOverviewTab()}
 
-						<select
-							id="customer_id"
-							name="customer_id"
-							required
-						>
 
-							<option value="">
-								انتخاب مشتری
-							</option>
+                    ${renderChatTab()}
 
-							${customers.map(user => `
 
-								<option
-									value="${adminEscape(user.id)}"
-									${selectedCustomer &&
-									selectedCustomer.id === user.id
-										? "selected"
-										: ""}
-								>
-									${adminEscape(
-										adminCustomerName(user)
-									)}
-									 — 
-									${adminEscape(
-										user.email || "-"
-									)}
-								</option>
+                    ${renderFilesTab()}
 
-							`).join("")}
 
-						</select>
+                    ${renderTimelineTab()}
 
-					</div>
 
+                    ${renderStatusTab()}
 
-					<div class="form-field">
 
-						<label for="title">
-							نام فیلم
-						</label>
+                </div>
 
-						<input
-							id="title"
-							name="title"
-							type="text"
-							maxlength="180"
-							required
-							placeholder="مثلاً ویدیوی معرفی محصول"
-						>
 
-					</div>
+            </div>
 
 
-					<div class="form-field">
+            <aside class="order-workspace-sidebar">
 
-						<label for="subject">
-							موضوع
-						</label>
 
-						<input
-							id="subject"
-							name="subject"
-							type="text"
-							maxlength="250"
-							required
-							placeholder="موضوع یا هدف ویدیو"
-						>
+                <nav class="order-side-nav">
 
-					</div>
 
+                    <button
+                        class="order-side-item active"
+                        data-tab="overview"
+                        type="button"
+                    >
 
-					<div class="form-field full">
+                        <span class="side-icon">
+                            ◫
+                        </span>
 
-						<label for="description">
-							توضیحات
-						</label>
+                        اطلاعات سفارش
 
-						<textarea
-							id="description"
-							name="description"
-							rows="6"
-							required
-							placeholder="توضیحات کامل سفارش..."
-						></textarea>
+                    </button>
 
-					</div>
 
+                    <button
+                        class="order-side-item"
+                        data-tab="chat"
+                        type="button"
+                    >
 
-					<div class="form-field">
+                        <span class="side-icon">
+                            ◌
+                        </span>
 
-						<label for="estimated_duration">
-							مدت تقریبی
-						</label>
+                        گفتگو
 
-						<select
-							id="estimated_duration"
-							name="estimated_duration"
-						>
+                    </button>
 
-							<option value="">
-								انتخاب مدت
-							</option>
 
-							<option value="30">
-								۳۰ ثانیه
-							</option>
+                    <button
+                        class="order-side-item"
+                        data-tab="files"
+                        type="button"
+                    >
 
-							<option value="60">
-								۱ دقیقه
-							</option>
+                        <span class="side-icon">
+                            □
+                        </span>
 
-							<option value="120">
-								۲ دقیقه
-							</option>
+                        فایل‌ها
 
-							<option value="180">
-								۳ دقیقه
-							</option>
+                    </button>
 
-							<option value="300">
-								۵ دقیقه
-							</option>
 
-							<option value="600">
-								۱۰ دقیقه
-							</option>
+                    <button
+                        class="order-side-item"
+                        data-tab="timeline"
+                        type="button"
+                    >
 
-							<option value="custom">
-								مدت سفارشی
-							</option>
+                        <span class="side-icon">
+                            ⋮
+                        </span>
 
-						</select>
+                        تاریخچه
 
-					</div>
+                    </button>
 
 
-					<div class="form-field">
+                    <button
+                        class="order-side-item"
+                        data-tab="status"
+                        type="button"
+                    >
 
-						<label for="production_model">
-							مدل تولید
-						</label>
+                        <span class="side-icon">
+                            ✓
+                        </span>
 
-						<select
-							id="production_model"
-							name="production_model"
-							required
-						>
+                        وضعیت سفارش
 
-							<option value="edit_only">
-								فقط تدوین
-							</option>
+                    </button>
 
-							<option value="voice_ready">
-								گویندگی آماده است
-							</option>
 
-							<option value="visual_ready">
-								تصاویر آماده است
-							</option>
+                </nav>
 
-							<option value="script_ready">
-								سناریو آماده است
-							</option>
 
-							<option value="full_production">
-								تولید کامل
-							</option>
+                <section class="customer-card">
 
-						</select>
 
-					</div>
+                    <div class="customer-card-head">
 
+                        ${
+                            avatar
+                            ?
+                            `
+                            <img
+                                class="customer-card-avatar"
+                                src="${adminEsc(avatar)}"
+                                alt=""
+                            >
+                            `
+                            :
+                            `
+                            <div class="customer-card-avatar">
+                                👤
+                            </div>
+                            `
+                        }
 
-					<div class="form-field">
 
-						<label for="aspect_ratio">
-							نسبت تصویر
-						</label>
+                        <div>
 
-						<select
-							id="aspect_ratio"
-							name="aspect_ratio"
-						>
+                            <strong>
+                                ${adminEsc(
+                                    customerName
+                                )}
+                            </strong>
 
-							<option value="">
-								انتخاب نسبت
-							</option>
+                            <span>
+                                مشتری
+                            </span>
 
-							<option value="16:9">
-								16:9
-							</option>
+                        </div>
 
-							<option value="9:16">
-								9:16
-							</option>
+                    </div>
 
-							<option value="1:1">
-								1:1
-							</option>
 
-							<option value="4:5">
-								4:5
-							</option>
+                    <div class="customer-card-row">
 
-						</select>
+                        <span>
+                            ایمیل
+                        </span>
 
-					</div>
+                        <strong>
+                            ${adminEsc(
+                                profile.email || "-"
+                            )}
+                        </strong>
 
+                    </div>
 
-					<div class="form-field">
 
-						<label for="output_quality">
-							کیفیت خروجی
-						</label>
+                    <div class="customer-card-row">
 
-						<select
-							id="output_quality"
-							name="output_quality"
-						>
+                        <span>
+                            تلفن
+                        </span>
 
-							<option value="">
-								انتخاب کیفیت
-							</option>
+                        <strong>
+                            ${adminEsc(
+                                profile.phone || "-"
+                            )}
+                        </strong>
 
-							<option value="720p">
-								720p
-							</option>
+                    </div>
 
-							<option value="1080p">
-								1080p
-							</option>
 
-							<option value="4K">
-								4K
-							</option>
+                    <div class="customer-card-row">
 
-						</select>
+                        <span>
+                            وضعیت
+                        </span>
 
-					</div>
+                        <strong>
+                            ${adminEsc(
+                                statusText(
+                                    order.status
+                                )
+                            )}
+                        </strong>
 
+                    </div>
 
-					<div class="form-field">
 
-						<label for="video_style">
-							سبک ویدیو
-						</label>
+                </section>
 
-						<select
-							id="video_style"
-							name="video_style"
-						>
 
-							<option value="">
-								انتخاب سبک
-							</option>
+            </aside>
 
-							<option value="آزاد">
-								آزاد
-							</option>
 
-							<option value="تبلیغاتی">
-								تبلیغاتی
-							</option>
+        </div>
 
-							<option value="آموزشی">
-								آموزشی
-							</option>
+    `;
 
-							<option value="مستند">
-								مستند
-							</option>
 
-							<option value="شبکه اجتماعی">
-								شبکه اجتماعی
-							</option>
+    bindOrderTabs();
 
-							<option value="سینمایی">
-								سینمایی
-							</option>
-
-						</select>
-
-					</div>
-
-
-					<div class="form-field full">
-
-						<label for="reference_links">
-							لینک‌های مرجع
-						</label>
-
-						<textarea
-							id="reference_links"
-							name="reference_links"
-							rows="4"
-							placeholder="لینک‌ها را وارد کنید..."
-						></textarea>
-
-					</div>
-
-
-					<div class="form-field full">
-
-						<label for="special_notes">
-							یادداشت‌های ویژه
-						</label>
-
-						<textarea
-							id="special_notes"
-							name="special_notes"
-							rows="4"
-							placeholder="نکات مهم سفارش..."
-						></textarea>
-
-					</div>
-
-				</div>
-
-
-				<div
-					id="create-message"
-					class="message"
-				></div>
-
-
-				<div class="form-actions">
-
-					<a
-						class="button secondary"
-						href="admin-users.html"
-					>
-						انصراف
-					</a>
-
-					<button
-						type="submit"
-						class="button primary"
-					>
-						ثبت سفارش
-					</button>
-
-				</div>
-
-			</section>
-
-
-			<aside class="panel order-side-card">
-
-				<div class="panel-heading">
-
-					<div>
-
-						<h2>
-							مشتری
-						</h2>
-
-					</div>
-
-				</div>
-
-
-				<div id="selected-customer-preview">
-
-					${renderSelectedCustomerPreview(
-						selectedCustomer
-					)}
-
-				</div>
-
-
-				<div class="side-info-box">
-
-					<strong>
-						وضعیت اولیه
-					</strong>
-
-					<span>
-						جدید
-					</span>
-
-				</div>
-
-
-				<div class="side-info-box">
-
-					<strong>
-						پرداخت
-					</strong>
-
-					<span>
-						پرداخت نشده
-					</span>
-
-				</div>
-
-			</aside>
-
-
-		</form>
-	`;
-
-
-	const customerSelect =
-		document.getElementById("customer_id");
-
-
-	if (customerSelect) {
-
-		customerSelect.addEventListener(
-			"change",
-			() => {
-
-				const user =
-					customers.find(
-						item =>
-							item.id === customerSelect.value
-					);
-
-
-				const preview =
-					document.getElementById(
-						"selected-customer-preview"
-					);
-
-
-				if (preview) {
-
-					preview.innerHTML =
-						renderSelectedCustomerPreview(user);
-
-				}
-
-			}
-		);
-
-	}
-
-
-	const form =
-		document.getElementById(
-			"admin-create-order-form"
-		);
-
-
-	if (form) {
-
-		form.addEventListener(
-			"submit",
-			async event => {
-
-				event.preventDefault();
-
-
-				await createAdminOrder(
-					form,
-					authData
-				);
-
-			}
-		);
-
-	}
+    initChatEvents(
+        currentUser
+    );
 
 }
 
 
-function renderSelectedCustomerPreview(user) {
+/* =========================================================
+   OVERVIEW
+   ========================================================= */
 
-	if (!user) {
+function renderOverviewTab() {
 
-		return `
-			<div class="customer-preview-empty">
-				ابتدا یک مشتری انتخاب کنید.
-			</div>
-		`;
-
-	}
+    const order =
+        adminOrderData;
 
 
-	return `
+    return `
 
-		<div class="customer-preview">
-
-			<div class="large-avatar">
-				${adminEscape(
-					(
-						adminCustomerName(user).charAt(0)
-						|| "؟"
-					).toUpperCase()
-				)}
-			</div>
+        <section
+            class="order-tab active"
+            data-panel="overview"
+        >
 
 
-			<strong>
-				${adminEscape(
-					adminCustomerName(user)
-				)}
-			</strong>
+            <div class="admin-card">
 
 
-			<span>
-				${adminEscape(
-					user.email || "-"
-				)}
-			</span>
+                <div class="admin-card-head">
+
+                    <div class="admin-card-title">
+
+                        <strong>
+                            اطلاعات سفارش
+                        </strong>
+
+                        <span>
+                            مشخصات پروژه
+                        </span>
+
+                    </div>
+
+                </div>
 
 
-			<span>
-				${adminEscape(
-					user.phone || "-"
-				)}
-			</span>
+                <div class="admin-card-body">
 
-		</div>
 
-	`;
+                    <div class="order-info-grid">
+
+
+                        <div class="info-box">
+
+                            <span>
+                                موضوع
+                            </span>
+
+                            <strong>
+                                ${adminEsc(
+                                    order.subject
+                                )}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="info-box">
+
+                            <span>
+                                مدل تولید
+                            </span>
+
+                            <strong>
+                                ${adminEsc(
+                                    modelText(
+                                        order.production_model
+                                    )
+                                )}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="info-box">
+
+                            <span>
+                                مدت
+                            </span>
+
+                            <strong>
+                                ${adminEsc(
+                                    order.estimated_duration
+                                    || "-"
+                                )}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="info-box">
+
+                            <span>
+                                نسبت تصویر
+                            </span>
+
+                            <strong>
+                                ${adminEsc(
+                                    order.aspect_ratio
+                                    || "-"
+                                )}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="info-box">
+
+                            <span>
+                                کیفیت
+                            </span>
+
+                            <strong>
+                                ${adminEsc(
+                                    order.output_quality
+                                    || "-"
+                                )}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="info-box">
+
+                            <span>
+                                سبک
+                            </span>
+
+                            <strong>
+                                ${adminEsc(
+                                    order.video_style
+                                    || "-"
+                                )}
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div
+                        class="info-box"
+                        style="margin-top:14px"
+                    >
+
+                        <span>
+                            توضیحات
+                        </span>
+
+                        <strong>
+                            ${adminEsc(
+                                order.description
+                                || "-"
+                            )}
+                        </strong>
+
+                    </div>
+
+
+                    ${
+                        order.reference_links
+                        ?
+                        `
+                        <div
+                            class="info-box"
+                            style="margin-top:12px"
+                        >
+
+                            <span>
+                                لینک‌های مرجع
+                            </span>
+
+                            <strong>
+                                ${adminEsc(
+                                    order.reference_links
+                                )}
+                            </strong>
+
+                        </div>
+                        `
+                        :
+                        ""
+                    }
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+    `;
 
 }
 
 
-async function createAdminOrder(
-	form,
-	authData
+/* =========================================================
+   CHAT TAB
+   ========================================================= */
+
+function renderChatTab() {
+
+    return `
+
+        <section
+            class="order-tab"
+            data-panel="chat"
+        >
+
+
+            <div class="chat-shell">
+
+
+                <div class="chat-head">
+
+                    <div>
+
+                        <strong>
+                            گفتگوی پروژه
+                        </strong>
+
+                        <span>
+                            ارتباط مستقیم با مشتری
+                        </span>
+
+                    </div>
+
+                    <span>
+                        ${adminOrderMessages.length}
+                        پیام
+                    </span>
+
+                </div>
+
+
+                <div
+                    id="chat-messages"
+                    class="chat-messages"
+                >
+
+                    ${renderMessages()}
+
+                </div>
+
+
+                <div class="chat-composer">
+
+
+                    <div
+                        id="chat-attachments-preview"
+                        class="chat-attachments-preview"
+                    ></div>
+
+
+                    <div class="chat-input-row">
+
+
+                        <textarea
+                            id="chat-input"
+                            class="chat-textarea"
+                            rows="1"
+                            placeholder="پیام خود را بنویسید..."
+                        ></textarea>
+
+
+                        <div class="chat-actions">
+
+
+                            <button
+                                id="chat-file"
+                                class="chat-action"
+                                type="button"
+                                title="ارسال فایل"
+                            >
+                                +
+                            </button>
+
+
+                            <button
+                                id="chat-image"
+                                class="chat-action"
+                                type="button"
+                                title="ارسال عکس"
+                            >
+                                ▧
+                            </button>
+
+
+                            <button
+                                id="chat-video"
+                                class="chat-action"
+                                type="button"
+                                title="ارسال ویدئو"
+                            >
+                                ▶
+                            </button>
+
+
+                            <button
+                                id="chat-voice"
+                                class="chat-action"
+                                type="button"
+                                title="ضبط صدا"
+                            >
+                                ●
+                            </button>
+
+
+                            <button
+                                id="chat-send"
+                                class="chat-action chat-send"
+                                type="button"
+                                title="ارسال"
+                            >
+                                ↑
+                            </button>
+
+
+                        </div>
+
+
+                    </div>
+
+
+                    <input
+                        id="chat-file-input"
+                        type="file"
+                        multiple
+                        hidden
+                    >
+
+
+                    <input
+                        id="chat-image-input"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        hidden
+                    >
+
+
+                    <input
+                        id="chat-video-input"
+                        type="file"
+                        accept="video/*"
+                        multiple
+                        hidden
+                    >
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+    `;
+
+}
+
+
+/* =========================================================
+   MESSAGE RENDER
+   ========================================================= */
+
+function renderMessages() {
+
+    if (
+        !adminOrderMessages.length
+    ) {
+
+        return `
+            <div class="empty">
+                هنوز پیامی در این سفارش وجود ندارد.
+            </div>
+        `;
+
+    }
+
+
+    return adminOrderMessages
+        .map(message => {
+
+            const mine =
+                message.sender_id ===
+                adminCurrentUserId();
+
+
+            return `
+
+                <div
+                    class="chat-message ${
+                        mine
+                        ? "mine"
+                        : "theirs"
+                    }"
+                >
+
+                    <div class="chat-bubble">
+
+                        ${renderMessageContent(
+                            message.message
+                        )}
+
+                    </div>
+
+                    <div class="chat-meta">
+
+                        ${adminDate(
+                            message.created_at
+                        )}
+
+                    </div>
+
+                </div>
+
+            `;
+
+        })
+        .join("");
+
+}
+
+
+function renderMessageContent(
+    message
 ) {
 
-	const message =
-		document.getElementById("create-message");
+    if (
+        typeof message !== "string"
+    ) {
 
+        return adminEsc(message);
 
-	const submitButton =
-		form.querySelector(
-			'button[type="submit"]'
-		);
+    }
 
 
-	const formData =
-		new FormData(form);
+    if (
+        message.startsWith(
+            "__ATTACHMENT__"
+        )
+    ) {
 
+        try {
 
-	const customerId =
-		String(
-			formData.get("customer_id") || ""
-		).trim();
+            const data =
+                JSON.parse(
+                    message.replace(
+                        "__ATTACHMENT__",
+                        ""
+                    )
+                );
 
 
-	const title =
-		String(
-			formData.get("title") || ""
-		).trim();
+            if (
+                data.type?.startsWith(
+                    "image/"
+                )
+            ) {
 
+                return `
 
-	const subject =
-		String(
-			formData.get("subject") || ""
-		).trim();
+                    <div class="chat-attachment">
 
+                        <img
+                            src="${adminEsc(
+                                data.url
+                            )}"
+                            alt="${adminEsc(
+                                data.name
+                            )}"
+                        >
 
-	const description =
-		String(
-			formData.get("description") || ""
-		).trim();
+                    </div>
 
+                `;
 
-	const productionModel =
-		String(
-			formData.get("production_model") || ""
-		).trim();
+            }
 
 
-	const allowedProductionModels = [
+            if (
+                data.type?.startsWith(
+                    "video/"
+                )
+            ) {
 
-		"edit_only",
+                return `
 
-		"voice_ready",
+                    <div class="chat-attachment">
 
-		"visual_ready",
+                        <video
+                            src="${adminEsc(
+                                data.url
+                            )}"
+                            controls
+                            preload="metadata"
+                        ></video>
 
-		"script_ready",
+                    </div>
 
-		"full_production"
+                `;
 
-	];
+            }
 
 
-	if (!customerId || !title || !subject || !description) {
+            if (
+                data.type?.startsWith(
+                    "audio/"
+                )
+            ) {
 
-		if (message) {
+                return `
 
-			message.className = "message error";
+                    <div class="chat-attachment">
 
-			message.textContent =
-				"لطفاً اطلاعات الزامی را کامل کنید.";
+                        <audio
+                            src="${adminEsc(
+                                data.url
+                            )}"
+                            controls
+                            style="width:100%"
+                        ></audio>
 
-		}
+                    </div>
 
-		return;
+                `;
 
-	}
+            }
 
 
-	if (
-		!allowedProductionModels.includes(
-			productionModel
-		)
-	) {
+            return `
 
-		if (message) {
+                <a
+                    class="chat-file"
+                    href="${adminEsc(
+                        data.url
+                    )}"
+                    target="_blank"
+                    rel="noopener"
+                >
 
-			message.className = "message error";
+                    <span class="chat-file-icon">
+                        □
+                    </span>
 
-			message.textContent =
-				"مدل تولید انتخاب‌شده معتبر نیست.";
+                    <span class="chat-file-info">
 
-		}
+                        <strong>
+                            ${adminEsc(
+                                data.name
+                            )}
+                        </strong>
 
-		return;
+                        <span>
+                            باز کردن فایل
+                        </span>
 
-	}
+                    </span>
 
+                </a>
 
-	if (submitButton) {
+            `;
 
-		submitButton.disabled = true;
+        } catch(error) {
 
-		submitButton.textContent =
-			"در حال ثبت...";
+            return adminEsc(
+                message
+            );
 
-	}
+        }
 
+    }
 
-	const orderData = {
 
-		customer_id: customerId,
-
-		title,
-
-		subject,
-
-		description,
-
-		estimated_duration:
-			String(
-				formData.get("estimated_duration") || ""
-			).trim() || null,
-
-		production_model:
-			productionModel,
-
-		aspect_ratio:
-			String(
-				formData.get("aspect_ratio") || ""
-			).trim() || null,
-
-		output_quality:
-			String(
-				formData.get("output_quality") || ""
-			).trim() || null,
-
-		video_style:
-			String(
-				formData.get("video_style") || ""
-			).trim() || null,
-
-		reference_links:
-			String(
-				formData.get("reference_links") || ""
-			).trim() || null,
-
-		special_notes:
-			String(
-				formData.get("special_notes") || ""
-			).trim() || null,
-
-		status: "new",
-
-		payment_status: "unpaid",
-
-		updated_at:
-			new Date().toISOString()
-
-	};
-
-
-	const { data, error } =
-		await window.db
-			.from("video_orders")
-			.insert(orderData)
-			.select("*")
-			.single();
-
-
-	if (error) {
-
-		console.error(
-			"CREATE ADMIN ORDER ERROR:",
-			error
-		);
-
-
-		if (message) {
-
-			message.className =
-				"message error";
-
-			message.textContent =
-				`ثبت سفارش انجام نشد: ${error.message}`;
-
-		}
-
-
-		if (submitButton) {
-
-			submitButton.disabled = false;
-
-			submitButton.textContent =
-				"ثبت سفارش";
-
-		}
-
-		return;
-
-	}
-
-
-	if (data) {
-
-		await window.db
-			.from("order_status_history")
-			.insert({
-
-				order_id: data.id,
-
-				status: "new",
-
-				changed_by: authData.user.id,
-
-				note: "سفارش توسط مدیر ایجاد شد."
-
-			});
-
-	}
-
-
-	location.href =
-		`admin-order.html?id=${encodeURIComponent(data.id)}`;
+    return adminEsc(
+        message
+    ).replace(
+        /\n/g,
+        "<br>"
+    );
 
 }
 
 
-/* ---------------------------------------------------------
-   Existing Order
-   --------------------------------------------------------- */
+/* =========================================================
+   FILES
+   ========================================================= */
 
-async function renderAdminOrderDetails(
-	root,
-	orderId,
-	authData
+function renderFilesTab() {
+
+    return `
+
+        <section
+            class="order-tab"
+            data-panel="files"
+        >
+
+            <div class="admin-card">
+
+
+                <div class="admin-card-head">
+
+                    <div class="admin-card-title">
+
+                        <strong>
+                            فایل‌های سفارش
+                        </strong>
+
+                        <span>
+                            ${adminOrderFiles.length}
+                            فایل
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="admin-card-body">
+
+
+                    <div class="file-grid">
+
+                        ${
+                            adminOrderFiles.length
+                            ?
+                            adminOrderFiles
+                                .map(
+                                    renderFileCard
+                                )
+                                .join("")
+                            :
+                            `
+                            <div class="empty"
+                                style="grid-column:1/-1"
+                            >
+                                هنوز فایلی برای این سفارش ثبت نشده است.
+                            </div>
+                            `
+                        }
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+    `;
+
+}
+
+
+function renderFileCard(file) {
+
+    const type =
+        file.mime_type || "";
+
+
+    let preview = `
+        <div class="file-preview">
+            <div class="file-placeholder">
+                □
+            </div>
+        </div>
+    `;
+
+
+    if (
+        type.startsWith("image/")
+    ) {
+
+        preview = `
+            <div class="file-preview">
+
+                <img
+                    src="${adminEsc(
+                        file.file_url
+                    )}"
+                    alt=""
+                >
+
+            </div>
+        `;
+
+    } else if (
+        type.startsWith("video/")
+    ) {
+
+        preview = `
+            <div class="file-preview">
+
+                <video
+                    src="${adminEsc(
+                        file.file_url
+                    )}"
+                    muted
+                    preload="metadata"
+                ></video>
+
+            </div>
+        `;
+
+    }
+
+
+    return `
+
+        <a
+            class="file-card"
+            href="${adminEsc(
+                file.file_url
+            )}"
+            target="_blank"
+            rel="noopener"
+        >
+
+            ${preview}
+
+
+            <div class="file-card-body">
+
+                <strong>
+                    ${adminEsc(
+                        file.file_name
+                    )}
+                </strong>
+
+                <span>
+                    ${adminDate(
+                        file.created_at
+                    )}
+                </span>
+
+            </div>
+
+        </a>
+
+    `;
+
+}
+
+
+/* =========================================================
+   TIMELINE
+   ========================================================= */
+
+function renderTimelineTab() {
+
+    return `
+
+        <section
+            class="order-tab"
+            data-panel="timeline"
+        >
+
+
+            <div class="admin-card">
+
+
+                <div class="admin-card-head">
+
+                    <div class="admin-card-title">
+
+                        <strong>
+                            تاریخچه سفارش
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="admin-card-body">
+
+
+                    <div class="timeline">
+
+
+                        ${
+                            adminOrderHistory.length
+                            ?
+                            adminOrderHistory
+                                .map(
+                                    history =>
+                                        `
+                                        <div class="timeline-item">
+
+                                            <span class="timeline-dot"></span>
+
+                                            <strong>
+                                                ${adminEsc(
+                                                    statusText(
+                                                        history.status
+                                                    )
+                                                )}
+                                            </strong>
+
+                                            <span>
+                                                ${adminDate(
+                                                    history.created_at
+                                                )}
+                                            </span>
+
+                                            ${
+                                                history.note
+                                                ?
+                                                `
+                                                <div
+                                                    style="
+                                                        margin-top:5px;
+                                                        color:var(--text-soft);
+                                                        font-size:11px
+                                                    "
+                                                >
+                                                    ${adminEsc(
+                                                        history.note
+                                                    )}
+                                                </div>
+                                                `
+                                                :
+                                                ""
+                                            }
+
+                                        </div>
+                                        `
+                                )
+                                .join("")
+                            :
+                            `
+                            <div class="empty">
+                                تاریخچه‌ای ثبت نشده است.
+                            </div>
+                            `
+                        }
+
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+    `;
+
+}
+
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
+function renderStatusTab() {
+
+    const order =
+        adminOrderData;
+
+
+    const statuses = [
+        "new",
+        "review",
+        "approved",
+        "production",
+        "editing",
+        "revision",
+        "ready",
+        "completed"
+    ];
+
+
+    const currentIndex =
+        statuses.indexOf(
+            order.status
+        );
+
+
+    return `
+
+        <section
+            class="order-tab"
+            data-panel="status"
+        >
+
+
+            <div class="admin-card">
+
+
+                <div class="admin-card-head">
+
+                    <div class="admin-card-title">
+
+                        <strong>
+                            وضعیت سفارش
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="admin-card-body">
+
+
+                    <div class="status-progress">
+
+                        ${statuses
+                            .map(
+                                (_, index) =>
+                                    `
+                                    <span
+                                        class="status-step ${
+                                            index <= currentIndex
+                                            ? "done"
+                                            : ""
+                                        }"
+                                    ></span>
+                                    `
+                            )
+                            .join("")
+                        }
+
+                    </div>
+
+
+                    <form
+                        id="status-form"
+                        class="form"
+                        style="margin-top:24px"
+                    >
+
+
+                        <label>
+
+                            وضعیت جدید
+
+                            <select id="status">
+
+                                ${statuses
+                                    .map(
+                                        status =>
+                                            `
+                                            <option
+                                                value="${status}"
+                                                ${
+                                                    status ===
+                                                    order.status
+                                                    ?
+                                                    "selected"
+                                                    :
+                                                    ""
+                                                }
+                                            >
+                                                ${adminEsc(
+                                                    statusText(
+                                                        status
+                                                    )
+                                                )}
+                                            </option>
+                                            `
+                                    )
+                                    .join("")
+                                }
+
+                            </select>
+
+                        </label>
+
+
+                        <label>
+
+                            یادداشت
+
+                            <textarea
+                                id="note"
+                                placeholder="یادداشت تغییر وضعیت..."
+                            ></textarea>
+
+                        </label>
+
+
+                        <button
+                            class="button primary"
+                            type="submit"
+                        >
+                            ذخیره وضعیت
+                        </button>
+
+
+                    </form>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+    `;
+
+}
+
+
+/* =========================================================
+   TAB SWITCHING
+   ========================================================= */
+
+function bindOrderTabs() {
+
+    const buttons =
+        document.querySelectorAll(
+            ".order-side-item"
+        );
+
+
+    const panels =
+        document.querySelectorAll(
+            ".order-tab"
+        );
+
+
+    buttons.forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                const tab =
+                    button.dataset.tab;
+
+
+                buttons.forEach(item => {
+
+                    item.classList.toggle(
+                        "active",
+                        item === button
+                    );
+
+                });
+
+
+                panels.forEach(panel => {
+
+                    panel.classList.toggle(
+                        "active",
+                        panel.dataset.panel === tab
+                    );
+
+                });
+
+
+                if (
+                    tab === "chat"
+                ) {
+
+                    setTimeout(
+                        scrollChatToBottom,
+                        50
+                    );
+
+                }
+
+            }
+        );
+
+    });
+
+
+    const statusForm =
+        document.getElementById(
+            "status-form"
+        );
+
+
+    if (statusForm) {
+
+        statusForm.addEventListener(
+            "submit",
+            saveOrderStatus
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SAVE STATUS
+   ========================================================= */
+
+async function saveOrderStatus(
+    event
 ) {
 
-	const [
-		orderResult,
-		filesResult,
-		historyResult
-	] = await Promise.all([
-
-		window.db
-			.from("video_orders")
-			.select(`
-				*,
-				profiles:customer_id(
-					id,
-					email,
-					first_name,
-					last_name,
-					phone,
-					address,
-					avatar_url,
-					role,
-					created_at
-				)
-			`)
-			.eq("id", orderId)
-			.single(),
+    event.preventDefault();
 
-		window.db
-			.from("order_files")
-			.select("*")
-			.eq("order_id", orderId)
-			.order("created_at", {
-				ascending: false
-			}),
 
-		window.db
-			.from("order_status_history")
-			.select(`
-				*,
-				profiles:changed_by(
-					first_name,
-					last_name,
-					email
-				)
-			`)
-			.eq("order_id", orderId)
-			.order("created_at", {
-				ascending: false
-			})
+    const status =
+        document.getElementById(
+            "status"
+        ).value;
 
-	]);
 
+    const note =
+        document.getElementById(
+            "note"
+        ).value.trim();
 
-	const order = orderResult.data;
 
+    const currentUser =
+        await getCurrentUser();
 
-	if (orderResult.error || !order) {
 
-		root.innerHTML = `
-			<div class="empty">
-				سفارش پیدا نشد.
-				<br>
-				${adminEscape(
-					orderResult.error?.message || ""
-				)}
-			</div>
-		`;
+    if (!currentUser) {
+        return;
+    }
 
-		return;
 
-	}
+    const orderId =
+        adminOrderData.id;
 
 
-	const profile =
-		order.profiles || {};
+    const update =
+        await window.db
+            .from("video_orders")
+            .update({
 
+                status,
 
-	const files =
-		filesResult.data || [];
+                updated_at:
+                    new Date()
+                        .toISOString()
 
+            })
+            .eq(
+                "id",
+                orderId
+            );
 
-	const history =
-		historyResult.data || [];
 
+    if (update.error) {
 
-	root.innerHTML = `
+        console.error(
+            update.error
+        );
 
-		<div class="admin-topbar">
+        showToast(
+            "تغییر وضعیت انجام نشد.",
+            "error"
+        );
 
-			<div>
+        return;
+    }
 
-				<div class="order-heading-line">
 
-					<span class="eyebrow">
-						${adminEscape(
-							order.order_number
-						)}
-					</span>
+    const history =
+        await window.db
+            .from(
+                "order_status_history"
+            )
+            .insert({
 
-					<span class="status status-${adminEscape(order.status)}">
-						${adminEscape(
-							adminStatusText(order.status)
-						)}
-					</span>
+                order_id:
+                    orderId,
 
-				</div>
+                status,
 
+                changed_by:
+                    currentUser.id,
 
-				<h1>
-					${adminEscape(order.title)}
-				</h1>
+                note
 
+            });
 
-				<p class="admin-subtitle">
-					${adminEscape(order.subject)}
-				</p>
 
-			</div>
+    if (history.error) {
 
+        showToast(
+            "وضعیت ذخیره شد، اما تاریخچه ثبت نشد.",
+            "error"
+        );
 
-			<div class="admin-actions">
+        return;
+    }
 
-				<a
-					class="button secondary"
-					href="admin.html"
-				>
-					بازگشت به سفارش‌ها
-				</a>
 
-			</div>
+    adminOrderData.status =
+        status;
 
-		</div>
 
+    adminOrderHistory.push({
 
-		<div class="order-detail-layout">
+        order_id:
+            orderId,
 
+        status,
 
-			<div class="order-main-column">
+        changed_by:
+            currentUser.id,
 
+        note,
 
-				<section class="panel">
+        created_at:
+            new Date().toISOString()
 
-					<div class="panel-heading">
+    });
 
-						<div>
 
-							<h2>
-								اطلاعات سفارش
-							</h2>
+    showToast(
+        "وضعیت سفارش ذخیره شد."
+    );
 
-							<p>
-								جزئیات کامل پروژه
-							</p>
 
-						</div>
-
-					</div>
-
-
-					<div class="detail-grid">
-
-
-						<div class="detail-item">
-
-							<span>
-								شماره سفارش
-							</span>
-
-							<strong>
-								${adminEscape(
-									order.order_number
-								)}
-							</strong>
-
-						</div>
-
-
-						<div class="detail-item">
-
-							<span>
-								مدل تولید
-							</span>
-
-							<strong>
-								${adminEscape(
-									adminModelText(
-										order.production_model
-									)
-								)}
-							</strong>
-
-						</div>
-
-
-						<div class="detail-item">
-
-							<span>
-								مدت
-							</span>
-
-							<strong>
-								${adminEscape(
-									order.estimated_duration || "-"
-								)}
-							</strong>
-
-						</div>
-
-
-						<div class="detail-item">
-
-							<span>
-								نسبت تصویر
-							</span>
-
-							<strong>
-								${adminEscape(
-									order.aspect_ratio || "-"
-								)}
-							</strong>
-
-						</div>
-
-
-						<div class="detail-item">
-
-							<span>
-								کیفیت خروجی
-							</span>
-
-							<strong>
-								${adminEscape(
-									order.output_quality || "-"
-								)}
-							</strong>
-
-						</div>
-
-
-						<div class="detail-item">
-
-							<span>
-								سبک
-							</span>
-
-							<strong>
-								${adminEscape(
-									order.video_style || "-"
-								)}
-							</strong>
-
-						</div>
-
-
-						<div class="detail-item">
-
-							<span>
-								پرداخت
-							</span>
-
-							<strong>
-								${adminEscape(
-									adminPaymentText(
-										order.payment_status
-									)
-								)}
-							</strong>
-
-						</div>
-
-
-						<div class="detail-item">
-
-							<span>
-								نیازهای تولید
-							</span>
-
-							<strong>
-								${adminEscape(
-									adminNeedsText(order)
-								)}
-							</strong>
-
-						</div>
-
-
-					</div>
-
-
-					<div class="description-box">
-
-						<span>
-							توضیحات سفارش
-						</span>
-
-						<p>
-							${adminEscape(
-								order.description || "-"
-							).replace(
-								/\n/g,
-								"<br>"
-							)}
-						</p>
-
-					</div>
-
-
-					${order.reference_links ? `
-
-						<div class="description-box">
-
-							<span>
-								لینک‌های مرجع
-							</span>
-
-							<p class="pre-line">
-								${adminEscape(
-									order.reference_links
-								)}
-							</p>
-
-						</div>
-
-					` : ""}
-
-
-					${order.special_notes ? `
-
-						<div class="description-box">
-
-							<span>
-								یادداشت‌های ویژه
-							</span>
-
-							<p class="pre-line">
-								${adminEscape(
-									order.special_notes
-								)}
-							</p>
-
-						</div>
-
-					` : ""}
-
-
-					<div class="order-dates">
-
-						<span>
-							ایجاد:
-							${adminDate(order.created_at)}
-						</span>
-
-						<span>
-							آخرین بروزرسانی:
-							${adminDate(order.updated_at)}
-						</span>
-
-					</div>
-
-				</section>
-
-
-				<section class="panel">
-
-					<div class="panel-heading">
-
-						<div>
-
-							<h2>
-								فایل‌های سفارش
-							</h2>
-
-							<p>
-								فایل‌های ارسال‌شده برای این سفارش
-							</p>
-
-						</div>
-
-					</div>
-
-
-					<div id="order-files">
-
-						${renderOrderFiles(files)}
-
-					</div>
-
-				</section>
-
-
-				<section class="panel">
-
-					<div class="panel-heading">
-
-						<div>
-
-							<h2>
-								تاریخچه وضعیت
-							</h2>
-
-							<p>
-								تغییرات ثبت‌شده برای سفارش
-							</p>
-
-						</div>
-
-					</div>
-
-
-					<div id="status-history">
-
-						${renderStatusHistory(history)}
-
-					</div>
-
-				</section>
-
-
-				<section class="panel chat-panel">
-
-					<div class="panel-heading">
-
-						<div>
-
-							<h2>
-								گفتگو با مشتری
-							</h2>
-
-							<p>
-								پیام‌های مربوط به این سفارش
-							</p>
-
-						</div>
-
-					</div>
-
-
-					<div
-						id="admin-chat-messages"
-						class="chat-messages"
-					>
-						<div class="chat-loading">
-							در حال دریافت پیام‌ها...
-						</div>
-					</div>
-
-
-					<form
-						id="admin-chat-form"
-						class="chat-form"
-					>
-
-						<textarea
-							id="admin-chat-input"
-							rows="3"
-							maxlength="5000"
-							placeholder="پیام خود را برای مشتری بنویسید..."
-							required
-						></textarea>
-
-
-						<div class="chat-form-bottom">
-
-							<span>
-								پیام به مشتری ارسال می‌شود.
-							</span>
-
-							<button
-								type="submit"
-								class="button primary"
-							>
-								ارسال پیام
-							</button>
-
-						</div>
-
-					</form>
-
-				</section>
-
-
-			</div>
-
-
-			<aside class="order-side-column">
-
-
-				<section class="panel">
-
-					<div class="panel-heading">
-
-						<div>
-
-							<h2>
-								مشتری
-							</h2>
-
-						</div>
-
-					</div>
-
-
-					<div class="customer-detail">
-
-						<div class="large-avatar">
-
-							${adminEscape(
-								(
-									adminCustomerName(profile)
-										.charAt(0)
-									|| "؟"
-								).toUpperCase()
-							)}
-
-						</div>
-
-
-						<strong>
-							${adminEscape(
-								adminCustomerName(profile)
-							)}
-						</strong>
-
-
-						<span>
-							${adminEscape(
-								profile.email || "-"
-							)}
-						</span>
-
-
-						<span>
-							${adminEscape(
-								profile.phone || "-"
-							)}
-						</span>
-
-
-						${profile.address ? `
-
-							<span>
-								${adminEscape(
-									profile.address
-								)}
-							</span>
-
-						` : ""}
-
-					</div>
-
-				</section>
-
-
-				<section class="panel">
-
-					<div class="panel-heading">
-
-						<div>
-
-							<h2>
-								تغییر وضعیت
-							</h2>
-
-							<p>
-								وضعیت فعلی:
-								${adminEscape(
-									adminStatusText(
-										order.status
-									)
-								)}
-							</p>
-
-						</div>
-
-					</div>
-
-
-					<form
-						id="status-form"
-						class="form"
-					>
-
-						<label>
-							وضعیت جدید
-						</label>
-
-
-						<select id="status">
-
-							${[
-								["new", "جدید"],
-								["review", "در حال بررسی"],
-								["approved", "تأیید شده"],
-								["production", "در حال تولید"],
-								["editing", "در حال تدوین"],
-								["revision", "نیازمند اصلاح"],
-								["ready", "آماده تحویل"],
-								["completed", "تکمیل شده"],
-								["cancelled", "لغو شده"]
-							].map(([value, label]) => `
-
-								<option
-									value="${value}"
-									${order.status === value
-										? "selected"
-										: ""}
-								>
-									${label}
-								</option>
-
-							`).join("")}
-
-						</select>
-
-
-						<label>
-							یادداشت
-						</label>
-
-
-						<textarea
-							id="status-note"
-							rows="4"
-							placeholder="دلیل یا توضیح تغییر وضعیت..."
-						></textarea>
-
-
-						<div
-							id="status-message"
-							class="message"
-						></div>
-
-
-						<button
-							type="submit"
-							class="button primary full-button"
-						>
-							ذخیره وضعیت
-						</button>
-
-					</form>
-
-				</section>
-
-
-				<section class="panel">
-
-					<div class="panel-heading">
-
-						<div>
-
-							<h2>
-								هزینه
-							</h2>
-
-						</div>
-
-					</div>
-
-
-					<div class="cost-list">
-
-						<div>
-
-							<span>
-								هزینه تخمینی
-							</span>
-
-							<strong>
-								${order.estimated_cost !== null &&
-								order.estimated_cost !== undefined
-									? adminEscape(
-										order.estimated_cost
-									)
-									: "-"
-								}
-							</strong>
-
-						</div>
-
-
-						<div>
-
-							<span>
-								هزینه نهایی
-							</span>
-
-							<strong>
-								${order.final_cost !== null &&
-								order.final_cost !== undefined
-									? adminEscape(
-										order.final_cost
-									)
-									: "-"
-								}
-							</strong>
-
-						</div>
-
-					</div>
-
-				</section>
-
-
-			</aside>
-
-
-		</div>
-	`;
-
-
-	await loadAdminMessages(
-		orderId,
-		authData.user.id
-	);
-
-
-	setupAdminStatusForm(
-		order,
-		authData,
-		orderId
-	);
-
-
-	setupAdminChat(
-		orderId,
-		authData.user.id
-	);
-
-
-	setupAdminRealtime(
-		orderId,
-		authData.user.id
-	);
+    renderOrderWorkspace(
+        currentUser
+    );
 
 }
 
 
-/* ---------------------------------------------------------
-   Files
-   --------------------------------------------------------- */
-
-function renderOrderFiles(files) {
-
-	if (!files.length) {
-
-		return `
-			<div class="empty-inline">
-				هنوز فایلی برای این سفارش ثبت نشده است.
-			</div>
-		`;
-
-	}
-
-
-	return `
-
-		<div class="file-list">
-
-			${files.map(file => `
-
-				<a
-					class="file-item"
-					href="${adminEscape(file.file_url || "#")}"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-
-					<div class="file-icon">
-						فایل
-					</div>
-
-
-					<div class="file-info">
-
-						<strong>
-							${adminEscape(
-								file.file_name
-							)}
-						</strong>
-
-						<span>
-							${adminEscape(
-								file.file_role || "فایل سفارش"
-							)}
-
-							${file.file_size
-								? ` — ${formatFileSize(file.file_size)}`
-								: ""}
-						</span>
-
-					</div>
-
-				</a>
-
-			`).join("")}
-
-		</div>
-	`;
-
-}
-
-
-function formatFileSize(bytes) {
-
-	const size = Number(bytes);
-
-	if (!size) {
-		return "";
-	}
-
-
-	if (size < 1024) {
-		return `${size} B`;
-	}
-
-
-	if (size < 1024 * 1024) {
-		return `${(size / 1024).toFixed(1)} KB`;
-	}
-
-
-	if (size < 1024 * 1024 * 1024) {
-		return `${(size / 1024 / 1024).toFixed(1)} MB`;
-	}
-
-
-	return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`;
-
-}
-
-
-/* ---------------------------------------------------------
-   Status History
-   --------------------------------------------------------- */
-
-function renderStatusHistory(history) {
-
-	if (!history.length) {
-
-		return `
-			<div class="empty-inline">
-				هنوز تاریخچه‌ای ثبت نشده است.
-			</div>
-		`;
-
-	}
-
-
-	return `
-
-		<div class="timeline">
-
-			${history.map(item => {
-
-				const changer =
-					item.profiles
-						? adminCustomerName(
-							item.profiles
-						)
-						: "مدیر";
-
-
-				return `
-
-					<div class="timeline-item">
-
-						<div class="timeline-dot"></div>
-
-
-						<div class="timeline-content">
-
-							<div class="timeline-top">
-
-								<strong>
-									${adminEscape(
-										adminStatusText(
-											item.status
-										)
-									)}
-								</strong>
-
-								<span>
-									${adminDate(
-										item.created_at
-									)}
-								</span>
-
-							</div>
-
-
-							<div class="timeline-user">
-								تغییر توسط:
-								${adminEscape(changer)}
-							</div>
-
-
-							${item.note ? `
-
-								<p>
-									${adminEscape(
-										item.note
-									)}
-								</p>
-
-							` : ""}
-
-						</div>
-
-					</div>
-
-				`;
-
-			}).join("")}
-
-		</div>
-
-	`;
-
-}
-
-
-/* ---------------------------------------------------------
-   Status Update
-   --------------------------------------------------------- */
-
-function setupAdminStatusForm(
-	order,
-	authData,
-	orderId
+/* =========================================================
+   CHAT EVENTS
+   ========================================================= */
+
+function initChatEvents(
+    currentUser
 ) {
 
-	const form =
-		document.getElementById(
-			"status-form"
-		);
+    const input =
+        document.getElementById(
+            "chat-input"
+        );
+
+
+    if (!input) {
+        return;
+    }
+
+
+    document
+        .getElementById(
+            "chat-send"
+        )
+        ?.addEventListener(
+            "click",
+            () =>
+                sendChatMessage(
+                    currentUser
+                )
+        );
+
+
+    document
+        .getElementById(
+            "chat-file"
+        )
+        ?.addEventListener(
+            "click",
+            () =>
+                document
+                    .getElementById(
+                        "chat-file-input"
+                    )
+                    .click()
+        );
+
+
+    document
+        .getElementById(
+            "chat-image"
+        )
+        ?.addEventListener(
+            "click",
+            () =>
+                document
+                    .getElementById(
+                        "chat-image-input"
+                    )
+                    .click()
+        );
+
+
+    document
+        .getElementById(
+            "chat-video"
+        )
+        ?.addEventListener(
+            "click",
+            () =>
+                document
+                    .getElementById(
+                        "chat-video-input"
+                    )
+                    .click()
+        );
+
+
+    document
+        .getElementById(
+            "chat-voice"
+        )
+        ?.addEventListener(
+            "click",
+            toggleVoiceRecording
+        );
+
+
+    document
+        .getElementById(
+            "chat-file-input"
+        )
+        ?.addEventListener(
+            "change",
+            event =>
+                addChatFiles(
+                    event.target.files
+                )
+        );
+
+
+    document
+        .getElementById(
+            "chat-image-input"
+        )
+        ?.addEventListener(
+            "change",
+            event =>
+                addChatFiles(
+                    event.target.files
+                )
+        );
 
 
-	if (!form) {
-		return;
-	}
+    document
+        .getElementById(
+            "chat-video-input"
+        )
+        ?.addEventListener(
+            "change",
+            event =>
+                addChatFiles(
+                    event.target.files
+                )
+        );
 
 
-	form.addEventListener(
-		"submit",
-		async event => {
+    input.addEventListener(
+        "keydown",
+        event => {
 
-			event.preventDefault();
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
 
+                event.preventDefault();
 
-			const status =
-				document.getElementById(
-					"status"
-				).value;
+                sendChatMessage(
+                    currentUser
+                );
 
+            }
 
-			const note =
-				document.getElementById(
-					"status-note"
-				).value.trim();
+        }
+    );
 
 
-			const message =
-				document.getElementById(
-					"status-message"
-				);
+    input.addEventListener(
+        "input",
+        () => {
 
+            input.style.height =
+                "auto";
 
-			const button =
-				form.querySelector(
-					'button[type="submit"]'
-				);
+            input.style.height =
+                Math.min(
+                    input.scrollHeight,
+                    150
+                ) + "px";
 
+        }
+    );
 
-			if (button) {
 
-				button.disabled = true;
+    renderAttachmentPreview();
 
-				button.textContent =
-					"در حال ذخیره...";
-
-			}
-
-
-			const update =
-				await window.db
-					.from("video_orders")
-					.update({
-
-						status,
-
-						updated_at:
-							new Date().toISOString()
-
-					})
-					.eq("id", orderId);
-
-
-			if (update.error) {
-
-				console.error(
-					"STATUS UPDATE ERROR:",
-					update.error
-				);
-
-
-				if (message) {
-
-					message.className =
-						"message error";
-
-					message.textContent =
-						`ذخیره انجام نشد: ${update.error.message}`;
-
-				}
-
-
-				if (button) {
-
-					button.disabled = false;
-
-					button.textContent =
-						"ذخیره وضعیت";
-
-				}
-
-				return;
-
-			}
-
-
-			const history =
-				await window.db
-					.from("order_status_history")
-					.insert({
-
-						order_id: orderId,
-
-						status,
-
-						changed_by:
-							authData.user.id,
-
-						note: note || null
-
-					});
-
-
-			if (history.error) {
-
-				console.error(
-					"HISTORY INSERT ERROR:",
-					history.error
-				);
-
-
-				if (message) {
-
-					message.className =
-						"message warning";
-
-					message.textContent =
-						"وضعیت ذخیره شد، اما تاریخچه وضعیت ثبت نشد.";
-
-				}
-
-			} else {
-
-				if (message) {
-
-					message.className =
-						"message success";
-
-					message.textContent =
-						"وضعیت با موفقیت ذخیره شد.";
-
-				}
-
-
-				const statusBadge =
-					document.querySelector(
-						".order-heading-line .status"
-					);
-
-
-				if (statusBadge) {
-
-					statusBadge.className =
-						`status status-${adminEscape(status)}`;
-
-					statusBadge.textContent =
-						adminStatusText(status);
-
-				}
-
-
-				order.status = status;
-
-			}
-
-
-			if (button) {
-
-				button.disabled = false;
-
-				button.textContent =
-					"ذخیره وضعیت";
-
-			}
-
-		}
-	);
+    scrollChatToBottom();
 
 }
 
 
-/* ---------------------------------------------------------
-   Chat
-   --------------------------------------------------------- */
+/* =========================================================
+   FILE SELECTION
+   ========================================================= */
 
-async function loadAdminMessages(
-	orderId,
-	adminId
+function addChatFiles(
+    files
 ) {
 
-	const container =
-		document.getElementById(
-			"admin-chat-messages"
-		);
+    if (!files) {
+        return;
+    }
 
 
-	if (!container) {
-		return;
-	}
+    selectedChatFiles =
+        selectedChatFiles.concat(
+            Array.from(files)
+        );
 
 
-	const { data, error } =
-		await window.db
-			.from("order_messages")
-			.select(`
-				id,
-				order_id,
-				sender_id,
-				message,
-				created_at,
-				profiles:sender_id(
-					first_name,
-					last_name,
-					email,
-					role
-				)
-			`)
-			.eq("order_id", orderId)
-			.order("created_at", {
-				ascending: true
-			});
-
-
-	if (error) {
-
-		console.error(
-			"CHAT LOAD ERROR:",
-			error
-		);
-
-
-		container.innerHTML = `
-			<div class="empty-inline">
-				دریافت پیام‌ها انجام نشد.
-				<br>
-				${adminEscape(error.message)}
-			</div>
-		`;
-
-		return;
-	}
-
-
-	if (!data || !data.length) {
-
-		container.innerHTML = `
-			<div class="chat-empty">
-				هنوز گفتگویی برای این سفارش ثبت نشده است.
-			</div>
-		`;
-
-		return;
-	}
-
-
-	container.innerHTML =
-		data.map(message => {
-
-			const mine =
-				message.sender_id === adminId;
-
-
-			const sender =
-				message.profiles
-					? adminCustomerName(
-						message.profiles
-					)
-					: (
-						mine
-							? "مدیر"
-							: "مشتری"
-					);
-
-
-			return `
-
-				<div
-					class="chat-message ${mine ? "mine" : "customer"}"
-				>
-
-					<div class="chat-bubble">
-
-						<div class="chat-meta">
-
-							<strong>
-								${adminEscape(
-									sender
-								)}
-							</strong>
-
-							<span>
-								${adminDate(
-									message.created_at
-								)}
-							</span>
-
-						</div>
-
-
-						<div class="chat-text">
-							${adminEscape(
-								message.message
-							).replace(
-								/\n/g,
-								"<br>"
-							)}
-						</div>
-
-					</div>
-
-				</div>
-
-			`;
-
-		}).join("");
-
-
-	container.scrollTop =
-		container.scrollHeight;
+    renderAttachmentPreview();
 
 }
 
 
-function setupAdminChat(
-	orderId,
-	adminId
-) {
+function renderAttachmentPreview() {
 
-	const form =
-		document.getElementById(
-			"admin-chat-form"
-		);
+    const container =
+        document.getElementById(
+            "chat-attachments-preview"
+        );
 
 
-	const input =
-		document.getElementById(
-			"admin-chat-input"
-		);
+    if (!container) {
+        return;
+    }
 
 
-	if (!form || !input) {
-		return;
-	}
+    container.innerHTML =
+        selectedChatFiles
+            .map(
+                (file, index) => {
+
+                    const url =
+                        URL.createObjectURL(
+                            file
+                        );
 
 
-	form.addEventListener(
-		"submit",
-		async event => {
-
-			event.preventDefault();
-
-
-			const message =
-				input.value.trim();
-
-
-			if (!message) {
-				return;
-			}
-
-
-			const button =
-				form.querySelector(
-					'button[type="submit"]'
-				);
+                    let content =
+                        `
+                        <div class="chat-preview">
+                            <span
+                                style="
+                                    display:grid;
+                                    place-items:center;
+                                    width:100%;
+                                    height:100%;
+                                    font-size:20px
+                                "
+                            >
+                                □
+                            </span>
+                        `;
 
 
-			if (button) {
+                    if (
+                        file.type.startsWith(
+                            "image/"
+                        )
+                    ) {
 
-				button.disabled = true;
+                        content =
+                            `
+                            <div class="chat-preview">
 
-				button.textContent =
-					"در حال ارسال...";
+                                <img
+                                    src="${url}"
+                                    alt=""
+                                >
 
-			}
+                            `;
 
-
-			const { error } =
-				await window.db
-					.from("order_messages")
-					.insert({
-
-						order_id: orderId,
-
-						sender_id: adminId,
-
-						message
-
-					});
+                    }
 
 
-			if (error) {
+                    if (
+                        file.type.startsWith(
+                            "video/"
+                        )
+                    ) {
 
-				console.error(
-					"CHAT SEND ERROR:",
-					error
-				);
+                        content =
+                            `
+                            <div class="chat-preview">
 
+                                <video
+                                    src="${url}"
+                                    muted
+                                ></video>
 
-				alert(
-					`ارسال پیام انجام نشد: ${error.message}`
-				);
+                            `;
 
-			} else {
-
-				input.value = "";
-
-				await loadAdminMessages(
-					orderId,
-					adminId
-				);
-
-			}
+                    }
 
 
-			if (button) {
+                    content += `
 
-				button.disabled = false;
+                            <button
+                                class="chat-preview-remove"
+                                type="button"
+                                data-remove-file="${index}"
+                            >
+                                ×
+                            </button>
 
-				button.textContent =
-					"ارسال پیام";
+                        </div>
 
-			}
+                    `;
 
-		}
-	);
+
+                    return content;
+
+                }
+            )
+            .join("");
+
+
+    container
+        .querySelectorAll(
+            "[data-remove-file]"
+        )
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    const index =
+                        Number(
+                            button.dataset
+                                .removeFile
+                        );
+
+
+                    selectedChatFiles.splice(
+                        index,
+                        1
+                    );
+
+
+                    renderAttachmentPreview();
+
+                }
+            );
+
+        });
 
 }
 
 
-function setupAdminRealtime(
-	orderId,
-	adminId
+/* =========================================================
+   SEND CHAT
+   ========================================================= */
+
+async function sendChatMessage(
+    currentUser
 ) {
 
-	if (!window.db || !window.db.channel) {
-		return;
-	}
+    const input =
+        document.getElementById(
+            "chat-input"
+        );
 
 
-	try {
+    const text =
+        input?.value.trim() || "";
 
-		window.db
-			.channel(
-				`admin-order-messages-${orderId}`
-			)
-			.on(
-				"postgres_changes",
-				{
-					event: "INSERT",
-					schema: "public",
-					table: "order_messages",
-					filter: `order_id=eq.${orderId}`
-				},
-				async () => {
 
-					await loadAdminMessages(
-						orderId,
-						adminId
-					);
+    if (
+        !text &&
+        !selectedChatFiles.length
+    ) {
 
-				}
-			)
-			.subscribe();
+        return;
+    }
 
-	} catch (error) {
 
-		console.warn(
-			"Realtime setup failed:",
-			error
-		);
+    const button =
+        document.getElementById(
+            "chat-send"
+        );
 
-	}
+
+    if (button) {
+        button.disabled = true;
+    }
+
+
+    try {
+
+
+        if (
+            text
+        ) {
+
+            const result =
+                await window.db
+                    .from(
+                        "order_messages"
+                    )
+                    .insert({
+
+                        order_id:
+                            adminOrderData.id,
+
+                        sender_id:
+                            currentUser.id,
+
+                        message:
+                            text
+
+                    })
+                    .select()
+                    .single();
+
+
+            if (result.error) {
+                throw result.error;
+            }
+
+
+            adminOrderMessages.push(
+                result.data
+            );
+
+        }
+
+
+        for (
+            const file of
+            selectedChatFiles
+        ) {
+
+            await uploadChatFile(
+                file,
+                currentUser
+            );
+
+        }
+
+
+        input.value = "";
+
+        selectedChatFiles = [];
+
+        renderAttachmentPreview();
+
+        renderChatMessagesOnly();
+
+        showToast(
+            "پیام ارسال شد."
+        );
+
+
+    } catch(error) {
+
+        console.error(error);
+
+        showToast(
+            "ارسال پیام انجام نشد.",
+            "error"
+        );
+
+    } finally {
+
+        if (button) {
+            button.disabled = false;
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   FILE UPLOAD
+   ========================================================= */
+
+async function uploadChatFile(
+    file,
+    currentUser
+) {
+
+    const safeName =
+        file.name
+            .replace(
+                /[^a-zA-Z0-9._-]/g,
+                "_"
+            );
+
+
+    const path =
+        `orders/${adminOrderData.id}/chat/${Date.now()}-${safeName}`;
+
+
+    const upload =
+        await window.db.storage
+            .from("video-files")
+            .upload(
+                path,
+                file,
+                {
+                    cacheControl:
+                        "3600",
+
+                    upsert:
+                        false
+                }
+            );
+
+
+    if (upload.error) {
+        throw upload.error;
+    }
+
+
+    const {
+        data: publicData
+    } =
+        window.db.storage
+            .from("video-files")
+            .getPublicUrl(
+                path
+            );
+
+
+    const fileUrl =
+        publicData.publicUrl;
+
+
+    const fileRecord =
+        await window.db
+            .from("order_files")
+            .insert({
+
+                order_id:
+                    adminOrderData.id,
+
+                uploaded_by:
+                    currentUser.id,
+
+                file_name:
+                    file.name,
+
+                file_path:
+                    path,
+
+                file_url:
+                    fileUrl,
+
+                file_size:
+                    file.size,
+
+                mime_type:
+                    file.type,
+
+                file_role:
+                    "chat"
+
+            })
+            .select()
+            .single();
+
+
+    if (fileRecord.error) {
+        throw fileRecord.error;
+    }
+
+
+    adminOrderFiles.push(
+        fileRecord.data
+    );
+
+
+    const attachmentMessage =
+        "__ATTACHMENT__" +
+        JSON.stringify({
+
+            name:
+                file.name,
+
+            url:
+                fileUrl,
+
+            type:
+                file.type,
+
+            size:
+                file.size
+
+        });
+
+
+    const messageResult =
+        await window.db
+            .from(
+                "order_messages"
+            )
+            .insert({
+
+                order_id:
+                    adminOrderData.id,
+
+                sender_id:
+                    currentUser.id,
+
+                message:
+                    attachmentMessage
+
+            })
+            .select()
+            .single();
+
+
+    if (messageResult.error) {
+        throw messageResult.error;
+    }
+
+
+    adminOrderMessages.push(
+        messageResult.data
+    );
+
+}
+
+
+/* =========================================================
+   VOICE RECORDING
+   ========================================================= */
+
+async function toggleVoiceRecording() {
+
+    const button =
+        document.getElementById(
+            "chat-voice"
+        );
+
+
+    if (
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+    ) {
+
+        showToast(
+            "ضبط صدا در این مرورگر پشتیبانی نمی‌شود.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    if (
+        isRecording
+    ) {
+
+        stopVoiceRecording();
+
+        return;
+    }
+
+
+    try {
+
+        const stream =
+            await navigator.mediaDevices
+                .getUserMedia({
+                    audio: true
+                });
+
+
+        recordingChunks = [];
+
+
+        mediaRecorder =
+            new MediaRecorder(
+                stream
+            );
+
+
+        mediaRecorder.ondataavailable =
+            event => {
+
+                if (
+                    event.data.size
+                ) {
+
+                    recordingChunks.push(
+                        event.data
+                    );
+
+                }
+
+            };
+
+
+        mediaRecorder.onstop =
+            async () => {
+
+                stream
+                    .getTracks()
+                    .forEach(
+                        track =>
+                            track.stop()
+                    );
+
+
+                const blob =
+                    new Blob(
+                        recordingChunks,
+                        {
+                            type:
+                                mediaRecorder
+                                    .mimeType
+                                ||
+                                "audio/webm"
+                        }
+                    );
+
+
+                const file =
+                    new File(
+                        [
+                            blob
+                        ],
+                        `voice-${Date.now()}.webm`,
+                        {
+                            type:
+                                blob.type
+                        }
+                    );
+
+
+                selectedChatFiles.push(
+                    file
+                );
+
+
+                renderAttachmentPreview();
+
+                showToast(
+                    "ویس آماده ارسال است."
+                );
+
+            };
+
+
+        mediaRecorder.start();
+
+        isRecording = true;
+
+
+        button?.classList.add(
+            "recording"
+        );
+
+
+        showToast(
+            "ضبط ویس شروع شد."
+        );
+
+
+    } catch(error) {
+
+        console.error(error);
+
+        showToast(
+            "دسترسی به میکروفون داده نشد.",
+            "error"
+        );
+
+    }
+
+}
+
+
+function stopVoiceRecording() {
+
+    if (
+        mediaRecorder &&
+        isRecording
+    ) {
+
+        mediaRecorder.stop();
+
+        isRecording = false;
+
+        document
+            .getElementById(
+                "chat-voice"
+            )
+            ?.classList.remove(
+                "recording"
+            );
+
+    }
+
+}
+
+
+/* =========================================================
+   CHAT RENDER
+   ========================================================= */
+
+function renderChatMessagesOnly() {
+
+    const container =
+        document.getElementById(
+            "chat-messages"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    container.innerHTML =
+        renderMessages();
+
+
+    scrollChatToBottom();
+
+}
+
+
+function scrollChatToBottom() {
+
+    const container =
+        document.getElementById(
+            "chat-messages"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    requestAnimationFrame(
+        () => {
+
+            container.scrollTop =
+                container.scrollHeight;
+
+        }
+    );
+
+}
+
+
+async function getAdminCurrentUser() {
+
+    const {
+        data
+    } =
+        await window.db.auth.getUser();
+
+
+    return data?.user || null;
+
+}
+
+
+function adminCurrentUserId() {
+
+    return window.__tchoobCurrentUserId || "";
+
+}
+
+
+/* =========================================================
+   GLOBAL USER CACHE
+   ========================================================= */
+
+(async function cacheAdminUser() {
+
+    try {
+
+        const user =
+            await getAdminCurrentUser();
+
+
+        if (user) {
+
+            window.__tchoobCurrentUserId =
+                user.id;
+
+        }
+
+    } catch(error) {
+
+        console.error(error);
+
+    }
+
+})();
+
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
+function initAdminShell() {
+
+    const shell =
+        document.getElementById(
+            "admin-shell"
+        );
+
+
+    if (!shell) {
+        return;
+    }
+
+
+    document
+        .getElementById(
+            "sidebar-toggle"
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                shell.classList.toggle(
+                    "sidebar-collapsed"
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById(
+            "mobile-sidebar"
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                shell.classList.toggle(
+                    "mobile-sidebar-open"
+                );
+
+            }
+        );
+
+
+    document
+        .getElementById(
+            "theme-toggle"
+        )
+        ?.addEventListener(
+            "click",
+            toggleAdminTheme
+        );
+
+
+    document
+        .getElementById(
+            "logout"
+        )
+        ?.addEventListener(
+            "click",
+            logout
+        );
+
+
+    initCommandPalette();
+
+}
+
+
+document.addEventListener(
+    "DOMContentLoaded",
+    initAdminShell
+);
+
+
+/* =========================================================
+   COMMAND PALETTE
+   ========================================================= */
+
+function initCommandPalette() {
+
+    const overlay =
+        document.getElementById(
+            "command-overlay"
+        );
+
+
+    const search =
+        document.getElementById(
+            "command-search"
+        );
+
+
+    const openButton =
+        document.getElementById(
+            "command-open"
+        );
+
+
+    if (
+        !overlay ||
+        !search
+    ) {
+
+        return;
+
+    }
+
+
+    openButton?.addEventListener(
+        "click",
+        () => {
+
+            overlay.classList.add(
+                "open"
+            );
+
+            search.focus();
+
+            renderCommandResults("");
+
+        }
+    );
+
+
+    overlay.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target === overlay
+            ) {
+
+                overlay.classList.remove(
+                    "open"
+                );
+
+            }
+
+        }
+    );
+
+
+    search.addEventListener(
+        "input",
+        () => {
+
+            renderCommandResults(
+                search.value
+            );
+
+        }
+    );
+
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                (event.ctrlKey ||
+                event.metaKey) &&
+                event.key.toLowerCase() === "k"
+            ) {
+
+                event.preventDefault();
+
+                overlay.classList.add(
+                    "open"
+                );
+
+                search.focus();
+
+                renderCommandResults("");
+
+            }
+
+
+            if (
+                event.key === "Escape"
+            ) {
+
+                overlay.classList.remove(
+                    "open"
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+function renderCommandResults(
+    query
+) {
+
+    const container =
+        document.getElementById(
+            "command-results"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    const items = [
+
+        {
+            title:
+                "اطلاعات سفارش",
+
+            action:
+                () =>
+                    switchOrderTab(
+                        "overview"
+                    )
+        },
+
+        {
+            title:
+                "گفتگو",
+
+            action:
+                () =>
+                    switchOrderTab(
+                        "chat"
+                    )
+        },
+
+        {
+            title:
+                "فایل‌ها",
+
+            action:
+                () =>
+                    switchOrderTab(
+                        "files"
+                    )
+        },
+
+        {
+            title:
+                "تاریخچه",
+
+            action:
+                () =>
+                    switchOrderTab(
+                        "timeline"
+                    )
+        },
+
+        {
+            title:
+                "وضعیت سفارش",
+
+            action:
+                () =>
+                    switchOrderTab(
+                        "status"
+                    )
+
+        }
+
+    ];
+
+
+    const filtered =
+        items.filter(
+            item =>
+                !query ||
+                item.title
+                    .includes(
+                        query
+                    )
+        );
+
+
+    container.innerHTML =
+        filtered
+            .map(
+                (item, index) =>
+                    `
+                    <div
+                        class="command-item"
+                        data-command-index="${index}"
+                    >
+
+                        <span>
+                            ⌕
+                        </span>
+
+                        ${adminEsc(
+                            item.title
+                        )}
+
+                    </div>
+                    `
+            )
+            .join("");
+
+
+    container
+        .querySelectorAll(
+            "[data-command-index]"
+        )
+        .forEach(item => {
+
+            item.addEventListener(
+                "click",
+                () => {
+
+                    const index =
+                        Number(
+                            item.dataset
+                                .commandIndex
+                        );
+
+
+                    filtered[index]
+                        ?.action();
+
+
+                    document
+                        .getElementById(
+                            "command-overlay"
+                        )
+                        ?.classList
+                        .remove(
+                            "open"
+                        );
+
+                }
+            );
+
+        });
+
+}
+
+
+function switchOrderTab(
+    tab
+) {
+
+    document
+        .querySelectorAll(
+            ".order-side-item"
+        )
+        .forEach(button => {
+
+            button.classList.toggle(
+                "active",
+                button.dataset.tab === tab
+            );
+
+        });
+
+
+    document
+        .querySelectorAll(
+            ".order-tab"
+        )
+        .forEach(panel => {
+
+            panel.classList.toggle(
+                "active",
+                panel.dataset.panel === tab
+            );
+
+        });
+
+
+    if (
+        tab === "chat"
+    ) {
+
+        scrollChatToBottom();
+
+    }
 
 }
