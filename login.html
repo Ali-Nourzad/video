@@ -3,177 +3,391 @@
 
 <head>
 
-	<meta charset="UTF-8">
-	<meta
-		name="viewport"
-		content="width=device-width, initial-scale=1.0"
-	>
+    <meta charset="utf-8">
 
-	<title>ورود | T-Choob Video</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
 
-	<link
-		rel="icon"
-		href="favicon.ico"
-	>
+    <title>ورود | T-Choob Video</title>
 
-	<link
-		rel="stylesheet"
-		href="css/style.css"
-	>
-	<link rel="stylesheet" href="css/login.css">
+    <link
+        rel="stylesheet"
+        href="css/style.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/login.css"
+    >
+
 </head>
 
-<body class="auth-page">
 
-	<main class="auth-card">
-
-		<a
-			href="index.html"
-			class="auth-brand"
-		>
-
-			<span class="auth-logo">
-				T
-			</span>
-
-			<span class="auth-brand-name">
-				T-Choob Video
-			</span>
-
-		</a>
+<body>
 
 
-		<h1 class="auth-title">
-			خوش آمدید
-		</h1>
-
-		<p class="auth-subtitle">
-			برای ورود به حساب خود اطلاعاتتان را وارد کنید.
-		</p>
+<main class="login-page">
 
 
-		<div
-			id="message-box"
-			class="hidden"
-		></div>
+    <section class="login-shell">
 
 
-		<div class="auth-field">
+        <!-- =================================================
+             VISUAL
+        ================================================== -->
 
-			<label
-				for="login-email"
-				class="auth-label"
-			>
-				ایمیل
-			</label>
-
-			<input
-				id="login-email"
-				class="auth-input"
-				type="email"
-				placeholder="example@email.com"
-				autocomplete="email"
-			>
-
-		</div>
+        <div class="login-visual">
 
 
-		<div class="auth-field">
-
-			<label
-				for="login-password"
-				class="auth-label"
-			>
-				رمز عبور
-			</label>
-
-			<div class="password-wrapper">
-
-				<input
-					id="login-password"
-					class="auth-input"
-					type="password"
-					placeholder="رمز عبور"
-					autocomplete="current-password"
-				>
-
-				<button
-					type="button"
-					class="password-toggle"
-					onclick="togglePassword()"
-				>
-					نمایش
-				</button>
-
-			</div>
-
-		</div>
+            <img
+                class="login-visual-image"
+                src="images/login-visual.jpg"
+                alt=""
+            >
 
 
-		<button
-			id="login-btn"
-			type="button"
-			class="auth-submit"
-			onclick="handleLogin()"
-		>
-			ورود
-		</button>
+            <div class="login-visual-overlay"></div>
 
 
-		<div class="auth-footer">
-
-			حساب کاربری ندارید؟
-
-			<a href="signup.html">
-				ساخت حساب
-			</a>
-
-		</div>
+            <div class="login-visual-content">
 
 
-		<div
-			class="auth-footer"
-			style="border-top:0;margin-top:0;padding-top:10px;"
-		>
+                <div class="login-brand">
 
-			<a href="index.html">
-				بازگشت به صفحه اصلی
-			</a>
+                    <span class="login-brand-mark">
+                        TC
+                    </span>
 
-		</div>
+                    <span>
+                        T-Choob Video
+                    </span>
 
-	</main>
-
-
-	<script>
-		function togglePassword() {
-			const input =
-				document.getElementById("login-password");
-
-			const button =
-				document.querySelector(".password-toggle");
-
-			const showing =
-				input.type === "text";
-
-			input.type =
-				showing
-					? "password"
-					: "text";
-
-			button.textContent =
-				showing
-					? "نمایش"
-					: "مخفی";
-		}
-	</script>
+                </div>
 
 
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-	<script src="js/config.js"></script>
-	<script src="js/supabase.js"></script>
-	<script src="js/auth.js"></script>
+                <div class="login-visual-copy">
+
+                    <small>
+                        VIDEO PRODUCTION WORKSPACE
+                    </small>
+
+                    <h1>
+                        پروژه‌هایت را
+                        حرفه‌ای مدیریت کن.
+                    </h1>
+
+                    <p>
+                        سفارش‌ها، گفتگوها، فایل‌ها و روند
+                        تولید ویدئو را در یک فضای منظم
+                        و حرفه‌ای دنبال کن.
+                    </p>
+
+                </div>
+
+
+                <div class="login-visual-pills">
+
+                    <span class="login-visual-pill">
+                        سفارش ویدئو
+                    </span>
+
+                    <span class="login-visual-pill">
+                        گفتگو
+                    </span>
+
+                    <span class="login-visual-pill">
+                        فایل‌ها
+                    </span>
+
+                    <span class="login-visual-pill">
+                        مدیریت پروژه
+                    </span>
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =================================================
+             FORM
+        ================================================== -->
+
+        <div class="login-form-side">
+
+
+            <div class="login-form-inner">
+
+
+                <div class="login-form-top">
+
+                    <span class="eyebrow">
+                        خوش آمدید
+                    </span>
+
+                    <h2>
+                        ورود به حساب
+                    </h2>
+
+                    <p>
+                        برای ادامه، اطلاعات حساب خود را وارد کنید.
+                    </p>
+
+                </div>
+
+
+                <form
+                    id="login-form"
+                    class="login-form"
+                >
+
+
+                    <div class="login-field">
+
+                        <div class="login-field-header">
+
+                            <label for="email">
+                                ایمیل
+                            </label>
+
+                        </div>
+
+
+                        <div class="login-input-wrap">
+
+                            <input
+                                id="email"
+                                type="email"
+                                autocomplete="email"
+                                placeholder="example@email.com"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="login-field">
+
+                        <div class="login-field-header">
+
+                            <label for="password">
+                                رمز عبور
+                            </label>
+
+                            <a href="reset-password.html">
+                                فراموشی رمز؟
+                            </a>
+
+                        </div>
+
+
+                        <div class="login-input-wrap">
+
+                            <input
+                                id="password"
+                                type="password"
+                                autocomplete="current-password"
+                                placeholder="رمز عبور خود را وارد کنید"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        id="login-message"
+                        class="login-message"
+                    ></div>
+
+
+                    <button
+                        id="login-submit"
+                        class="login-submit"
+                        type="submit"
+                    >
+
+                        <span>
+                            ورود به حساب
+                        </span>
+
+                    </button>
+
+
+                </form>
+
+
+                <div class="login-footer">
+
+                    حساب کاربری ندارید؟
+
+                    <a href="signup.html">
+                        ثبت‌نام کنید
+                    </a>
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+    </section>
+
+
+</main>
+
+
+<script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+></script>
+
+<script src="js/config.js"></script>
+
+<script src="js/supabase.js"></script>
+
+<script src="js/auth.js"></script>
+
+
+<script>
+
+document
+    .getElementById("login-form")
+    .addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+
+        const email =
+            document
+                .getElementById("email")
+                .value
+                .trim();
+
+
+        const password =
+            document
+                .getElementById("password")
+                .value;
+
+
+        const button =
+            document
+                .getElementById("login-submit");
+
+
+        const message =
+            document
+                .getElementById("login-message");
+
+
+        message.textContent = "";
+
+
+        if (!email || !password) {
+
+            message.textContent =
+                "ایمیل و رمز عبور را وارد کنید.";
+
+            return;
+        }
+
+
+        button.classList.add("loading");
+
+
+        try {
+
+            const {
+                data,
+                error
+            } =
+                await window.db.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+
+            if (error) {
+
+                message.textContent =
+                    "ایمیل یا رمز عبور صحیح نیست.";
+
+                return;
+            }
+
+
+            if (!data?.user) {
+
+                message.textContent =
+                    "ورود انجام نشد.";
+
+                return;
+            }
+
+
+            const {
+                data: profile,
+                error: profileError
+            } =
+                await window.db
+                    .from("profiles")
+                    .select("role")
+                    .eq("id", data.user.id)
+                    .maybeSingle();
+
+
+            if (profileError) {
+
+                message.textContent =
+                    "اطلاعات حساب دریافت نشد.";
+
+                return;
+            }
+
+
+            if (profile?.role === "admin") {
+
+                window.location.replace(
+                    "admin.html"
+                );
+
+            } else {
+
+                window.location.replace(
+                    "orders.html"
+                );
+
+            }
+
+        } catch(error) {
+
+            console.error(error);
+
+            message.textContent =
+                "خطایی در ورود رخ داد.";
+
+        } finally {
+
+            button.classList.remove("loading");
+
+        }
+
+    });
+
+
+</script>
+
 
 </body>
-
 </html>
