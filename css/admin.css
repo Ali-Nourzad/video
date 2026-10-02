@@ -2531,3 +2531,121 @@ html.dark .admin-page .sidebar-help-card {
 	}
 
 }
+
+/* ---------------------------------------------------------
+   CUSTOMER CELL
+   --------------------------------------------------------- */
+
+.admin-customer {
+
+	display:
+		inline-flex;
+
+	align-items:
+		center;
+
+	gap:
+		8px;
+
+	white-space:
+		nowrap;
+
+}
+
+
+.admin-avatar {
+
+	width:
+		29px;
+
+	height:
+		29px;
+
+	display:
+		grid;
+
+	place-items:
+		center;
+
+	border-radius:
+		9px;
+
+	background:
+		linear-gradient(
+			135deg,
+			#dce9ee,
+			#edf3f1
+		);
+
+	color:
+		#315f78;
+
+	font-size:
+		9px;
+
+	font-weight:
+		900;
+
+	flex:
+		0 0 29px;
+
+	transition:
+		transform .25s ease;
+
+}
+
+
+.admin-table tr:hover .admin-avatar {
+
+	transform:
+		rotate(-5deg) scale(1.08);
+
+}
+
+
+.admin-order-title {
+
+	display:
+		flex;
+
+	flex-direction:
+		column;
+
+	gap:
+		3px;
+
+}
+
+
+.admin-order-title strong {
+
+	font-size:
+		11px;
+
+}
+
+
+.admin-order-title small {
+
+	color:
+		var(--admin-muted);
+
+	font-size:
+		9px;
+
+	font-weight:
+		400;
+
+	max-width:
+		200px;
+
+	white-space:
+		nowrap;
+
+	overflow:
+		hidden;
+
+	text-overflow:
+		ellipsis;
+
+}
