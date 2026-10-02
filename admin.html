@@ -2,7 +2,6 @@
 <html lang="fa" dir="rtl">
 
 <head>
-
 	<meta charset="utf-8">
 
 	<meta
@@ -10,297 +9,23 @@
 		content="width=device-width, initial-scale=1"
 	>
 
-	<title>پنل مدیریت | T-Choob Video</title>
+	<title>مدیریت سفارشات | T-Choob Video</title>
 
 	<link
 		rel="stylesheet"
 		href="css/style.css"
 	>
 
-	<style>
-
-		/* =========================
-		   ADMIN DASHBOARD
-		========================= */
-
-		.admin-page {
-			padding-bottom: 50px;
-		}
-
-		.admin-toolbar {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 20px;
-			margin-bottom: 24px;
-		}
-
-		.admin-heading h1 {
-			margin: 4px 0 0;
-		}
-
-		.admin-heading .eyebrow {
-			display: inline-block;
-			margin-bottom: 4px;
-		}
-
-		.admin-actions {
-			display: flex;
-			gap: 10px;
-		}
-
-		/* Stats */
-
-		.admin-stats {
-			display: grid;
-			grid-template-columns: repeat(4, 1fr);
-			gap: 15px;
-			margin-bottom: 24px;
-		}
-
-		.admin-stat {
-			background: var(--surface, #fff);
-			border: 1px solid var(--border, #ddd);
-			border-radius: 16px;
-			padding: 20px;
-			box-shadow: 0 8px 25px rgba(0,0,0,.04);
-		}
-
-		.admin-stat-top {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 10px;
-			margin-bottom: 14px;
-		}
-
-		.admin-stat-label {
-			font-size: 13px;
-			opacity: .65;
-		}
-
-		.admin-stat-icon {
-			width: 38px;
-			height: 38px;
-			border-radius: 11px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			background: rgba(127,127,127,.10);
-			font-size: 18px;
-		}
-
-		.admin-stat strong {
-			font-size: 27px;
-			display: block;
-		}
-
-		/* Layout */
-
-		.admin-orders-layout {
-			display: grid;
-			grid-template-columns: 230px minmax(0,1fr);
-			gap: 20px;
-			align-items: start;
-		}
-
-		.admin-sidebar {
-			position: sticky;
-			top: 20px;
-			padding: 15px;
-		}
-
-		.admin-sidebar-title {
-			font-weight: 700;
-			margin: 4px 5px 13px;
-		}
-
-		.admin-filter-list {
-			display: flex;
-			flex-direction: column;
-			gap: 7px;
-		}
-
-		.admin-filter {
-			width: 100%;
-			border: 1px solid transparent;
-			background: transparent;
-			color: inherit;
-			padding: 12px;
-			border-radius: 11px;
-			font: inherit;
-			cursor: pointer;
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			text-align: right;
-			transition: .18s ease;
-		}
-
-		.admin-filter:hover {
-			background: rgba(127,127,127,.07);
-		}
-
-		.admin-filter.active {
-			background: var(--primary, #222);
-			color: #fff;
-		}
-
-		.admin-filter-right {
-			display: flex;
-			align-items: center;
-			gap: 8px;
-		}
-
-		.admin-filter-count {
-			min-width: 25px;
-			height: 25px;
-			padding: 0 6px;
-			border-radius: 20px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			background: rgba(127,127,127,.12);
-			font-size: 12px;
-		}
-
-		.admin-filter.active .admin-filter-count {
-			background: rgba(255,255,255,.18);
-		}
-
-		.admin-content {
-			min-width: 0;
-		}
-
-		.admin-content-head {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 15px;
-			margin-bottom: 14px;
-		}
-
-		.admin-content-head h2 {
-			margin: 0;
-			font-size: 19px;
-		}
-
-		.admin-table-panel {
-			padding: 0;
-			overflow: hidden;
-		}
-
-		.admin-table-panel .table-wrap {
-			margin: 0;
-		}
-
-		.admin-order-row {
-			cursor: pointer;
-			transition: background .15s ease;
-		}
-
-		.admin-order-row:hover {
-			background: rgba(127,127,127,.055);
-		}
-
-		.admin-order-number {
-			font-family: monospace;
-			direction: ltr;
-			display: inline-block;
-			font-size: 13px;
-		}
-
-		.admin-order-title {
-			font-weight: 650;
-		}
-
-		.admin-customer {
-			display: flex;
-			align-items: center;
-			gap: 9px;
-			min-width: 140px;
-		}
-
-		.admin-avatar {
-			width: 32px;
-			height: 32px;
-			border-radius: 50%;
-			object-fit: cover;
-			flex-shrink: 0;
-			background: rgba(127,127,127,.1);
-		}
-
-		.admin-empty {
-			padding: 45px 20px;
-			text-align: center;
-			opacity: .6;
-		}
-
-		/* Responsive */
-
-		@media (max-width: 900px) {
-
-			.admin-stats {
-				grid-template-columns: repeat(2, 1fr);
-			}
-
-			.admin-orders-layout {
-				grid-template-columns: 1fr;
-			}
-
-			.admin-sidebar {
-				position: static;
-			}
-
-			.admin-filter-list {
-				display: grid;
-				grid-template-columns: repeat(2,1fr);
-			}
-
-		}
-
-		@media (max-width: 600px) {
-
-			.admin-toolbar {
-				align-items: flex-start;
-				flex-direction: column;
-			}
-
-			.admin-actions {
-				width: 100%;
-			}
-
-			.admin-actions .button {
-				flex: 1;
-			}
-
-			.admin-stats {
-				grid-template-columns: 1fr 1fr;
-				gap: 10px;
-			}
-
-			.admin-stat {
-				padding: 15px;
-			}
-
-			.admin-stat strong {
-				font-size: 23px;
-			}
-
-			.admin-filter-list {
-				grid-template-columns: 1fr;
-			}
-
-		}
-
-	</style>
-
+	<link
+		rel="stylesheet"
+		href="css/admin.css"
+	>
 </head>
 
 
-<body>
+<body class="admin-page">
 
-	<header class="site-header">
+	<header class="site-header admin-header">
 
 		<div class="container header-inner">
 
@@ -348,14 +73,13 @@
 	</header>
 
 
-	<main class="page admin-page">
+	<main class="page admin-main">
 
 		<div class="container">
 
+			<div class="admin-topbar">
 
-			<div class="admin-toolbar">
-
-				<div class="admin-heading">
+				<div>
 
 					<span class="eyebrow">
 						پنل مدیریت
@@ -365,22 +89,26 @@
 						مدیریت سفارشات
 					</h1>
 
+					<p class="admin-subtitle">
+						سفارش‌ها، وضعیت تولید و گفتگو با مشتریان را مدیریت کنید.
+					</p>
+
 				</div>
 
 
 				<div class="admin-actions">
 
 					<a
-						class="button secondary"
+						class="button primary"
 						href="admin-users.html"
 					>
-						مدیریت کاربران
+						ثبت سفارش جدید
 					</a>
 
 					<button
 						type="button"
 						id="refresh"
-						class="button primary"
+						class="button secondary"
 					>
 						بروزرسانی
 					</button>
@@ -390,21 +118,12 @@
 			</div>
 
 
-			<div class="admin-stats">
-
+			<section class="admin-stats">
 
 				<div class="admin-stat">
 
-					<div class="admin-stat-top">
-
-						<span class="admin-stat-label">
-							کل سفارشات
-						</span>
-
-						<span class="admin-stat-icon">
-							📦
-						</span>
-
+					<div class="admin-stat-label">
+						کل سفارش‌ها
 					</div>
 
 					<strong id="total">
@@ -416,16 +135,8 @@
 
 				<div class="admin-stat">
 
-					<div class="admin-stat-top">
-
-						<span class="admin-stat-label">
-							سفارش جدید
-						</span>
-
-						<span class="admin-stat-icon">
-							✨
-						</span>
-
+					<div class="admin-stat-label">
+						سفارش‌های جدید
 					</div>
 
 					<strong id="new">
@@ -437,16 +148,8 @@
 
 				<div class="admin-stat">
 
-					<div class="admin-stat-top">
-
-						<span class="admin-stat-label">
-							در حال انجام
-						</span>
-
-						<span class="admin-stat-icon">
-							🔄
-						</span>
-
+					<div class="admin-stat-label">
+						در حال انجام
 					</div>
 
 					<strong id="progress">
@@ -458,16 +161,8 @@
 
 				<div class="admin-stat">
 
-					<div class="admin-stat-top">
-
-						<span class="admin-stat-label">
-							آماده تحویل
-						</span>
-
-						<span class="admin-stat-icon">
-							✓
-						</span>
-
+					<div class="admin-stat-label">
+						آماده تحویل
 					</div>
 
 					<strong id="ready">
@@ -477,178 +172,189 @@
 				</div>
 
 
-			</div>
+				<div class="admin-stat">
+
+					<div class="admin-stat-label">
+						تکمیل شده
+					</div>
+
+					<strong id="completed">
+						0
+					</strong>
+
+				</div>
 
 
-			<div class="admin-orders-layout">
+				<div class="admin-stat">
+
+					<div class="admin-stat-label">
+						لغو شده
+					</div>
+
+					<strong id="cancelled">
+						0
+					</strong>
+
+				</div>
+
+			</section>
 
 
-				<aside class="panel admin-sidebar">
+			<section class="admin-layout">
 
-					<div class="admin-sidebar-title">
-						فیلتر سفارشات
+
+				<aside class="admin-sidebar panel">
+
+					<div class="sidebar-title">
+						<span>فیلتر سفارش‌ها</span>
 					</div>
 
 
-					<div class="admin-filter-list">
-
+					<div class="filter-list">
 
 						<button
 							type="button"
-							class="admin-filter active"
+							class="filter-button active"
 							data-filter="all"
 						>
-
-							<span class="admin-filter-right">
-								<span>📦</span>
-								<span>همه سفارشات</span>
-							</span>
-
-							<span
-								class="admin-filter-count"
-								id="count-all"
-							>
-								0
-							</span>
-
+							<span>همه سفارش‌ها</span>
+							<strong id="filter-all-count">0</strong>
 						</button>
 
 
 						<button
 							type="button"
-							class="admin-filter"
-							data-filter="progress"
+							class="filter-button"
+							data-filter="active"
 						>
-
-							<span class="admin-filter-right">
-								<span>🔄</span>
-								<span>در جریان</span>
-							</span>
-
-							<span
-								class="admin-filter-count"
-								id="count-progress"
-							>
-								0
-							</span>
-
+							<span>در حال انجام</span>
+							<strong id="filter-active-count">0</strong>
 						</button>
 
 
 						<button
 							type="button"
-							class="admin-filter"
+							class="filter-button"
 							data-filter="completed"
 						>
-
-							<span class="admin-filter-right">
-								<span>✓</span>
-								<span>تکمیل شده</span>
-							</span>
-
-							<span
-								class="admin-filter-count"
-								id="count-completed"
-							>
-								0
-							</span>
-
+							<span>تکمیل شده</span>
+							<strong id="filter-completed-count">0</strong>
 						</button>
 
 
 						<button
 							type="button"
-							class="admin-filter"
+							class="filter-button"
 							data-filter="cancelled"
 						>
-
-							<span class="admin-filter-right">
-								<span>×</span>
-								<span>لغو شده</span>
-							</span>
-
-							<span
-								class="admin-filter-count"
-								id="count-cancelled"
-							>
-								0
-							</span>
-
+							<span>لغو شده</span>
+							<strong id="filter-cancelled-count">0</strong>
 						</button>
 
-
 					</div>
+
+
+					<div class="sidebar-divider"></div>
+
+
+					<label class="search-box">
+
+						<span>
+							جستجوی سفارش
+						</span>
+
+						<input
+							type="search"
+							id="order-search"
+							placeholder="شماره، عنوان یا نام مشتری..."
+							autocomplete="off"
+						>
+
+					</label>
 
 				</aside>
 
 
-				<section class="admin-content">
+				<section class="admin-content panel">
 
+					<div class="panel-heading">
 
-					<div class="admin-content-head">
+						<div>
 
-						<h2 id="orders-title">
-							همه سفارشات
-						</h2>
+							<h2>
+								سفارش‌ها
+							</h2>
+
+							<p id="orders-caption">
+								همه سفارش‌ها
+							</p>
+
+						</div>
 
 					</div>
 
 
-					<section class="panel admin-table-panel">
+					<div class="table-wrap admin-table-wrap">
 
-						<div class="table-wrap">
+						<table class="table admin-table">
 
-							<table class="table">
+							<thead>
 
-								<thead>
+								<tr>
 
-									<tr>
+									<th>
+										شماره
+									</th>
 
-										<th>
-											شماره
-										</th>
+									<th>
+										عنوان
+									</th>
 
-										<th>
-											عنوان
-										</th>
+									<th>
+										مشتری
+									</th>
 
-										<th>
-											مشتری
-										</th>
+									<th>
+										مدل تولید
+									</th>
 
-										<th>
-											مدل
-										</th>
+									<th>
+										وضعیت
+									</th>
 
-										<th>
-											وضعیت
-										</th>
+									<th>
+										تاریخ
+									</th>
 
-										<th>
-											تاریخ
-										</th>
+									<th>
+										عملیات
+									</th>
 
-										<th>
-											عملیات
-										</th>
+								</tr>
 
-									</tr>
-
-								</thead>
+							</thead>
 
 
-								<tbody id="orders-body"></tbody>
+							<tbody id="orders-body">
 
-							</table>
+								<tr>
+									<td
+										colspan="7"
+										class="table-loading"
+									>
+										در حال دریافت سفارش‌ها...
+									</td>
+								</tr>
 
-						</div>
+							</tbody>
 
-					</section>
+						</table>
+
+					</div>
 
 				</section>
 
-
-			</div>
+			</section>
 
 		</div>
 
@@ -658,9 +364,13 @@
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 	<script src="js/config.js"></script>
+
 	<script src="js/supabase.js"></script>
+
 	<script src="js/auth.js"></script>
+
 	<script src="js/app.js"></script>
+
 	<script src="js/admin.js"></script>
 
 
@@ -668,35 +378,33 @@
 
 		document.addEventListener("DOMContentLoaded", () => {
 
-			const logout =
-				document.getElementById("logout");
+			const logoutButton = document.getElementById("logout");
 
-			const refresh =
-				document.getElementById("refresh");
+			const refreshButton = document.getElementById("refresh");
 
 
-			if (logout) {
+			if (logoutButton) {
 
-				logout.addEventListener(
+				logoutButton.addEventListener(
 					"click",
-					window.logout
+					logout
 				);
 
 			}
 
 
-			if (refresh) {
+			if (refreshButton) {
 
-				refresh.addEventListener(
+				refreshButton.addEventListener(
 					"click",
-					adminOrders
+					() => adminOrders()
 				);
 
 			}
 
 
 			document
-				.querySelectorAll(".admin-filter")
+				.querySelectorAll(".filter-button")
 				.forEach(button => {
 
 					button.addEventListener(
@@ -704,21 +412,50 @@
 						() => {
 
 							document
-								.querySelectorAll(".admin-filter")
-								.forEach(item =>
-									item.classList.remove("active")
-								);
+								.querySelectorAll(".filter-button")
+								.forEach(item => {
+									item.classList.remove("active");
+								});
+
 
 							button.classList.add("active");
 
-							adminSetOrderFilter(
-								button.dataset.filter
-							);
+
+							if (typeof window.filterAdminOrders === "function") {
+
+								window.filterAdminOrders(
+									button.dataset.filter
+								);
+
+							}
 
 						}
 					);
 
 				});
+
+
+			const search = document.getElementById("order-search");
+
+
+			if (search) {
+
+				search.addEventListener(
+					"input",
+					event => {
+
+						if (typeof window.searchAdminOrders === "function") {
+
+							window.searchAdminOrders(
+								event.target.value
+							);
+
+						}
+
+					}
+				);
+
+			}
 
 
 			adminOrders();
