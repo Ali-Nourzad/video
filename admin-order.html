@@ -3,130 +3,334 @@
 
 <head>
 
-	<meta charset="utf-8">
+    <meta charset="utf-8">
 
-	<meta
-		name="viewport"
-		content="width=device-width, initial-scale=1"
-	>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
 
-	<title>مدیریت سفارش | T-Choob Video</title>
+    <title>
+        مدیریت سفارش | T-Choob Video
+    </title>
 
-	<link
-		rel="stylesheet"
-		href="css/style.css"
-	>
+    <link
+        rel="stylesheet"
+        href="css/style.css"
+    >
 
-	<link
-		rel="stylesheet"
-		href="css/admin.css"
-	>
+    <link
+        rel="stylesheet"
+        href="css/admin.css"
+    >
 
 </head>
 
 
-<body class="admin-page">
-
-	<header class="site-header admin-header">
-
-		<div class="container header-inner">
-
-			<a
-				class="brand"
-				href="admin.html"
-			>
-				T-Choob Video
-			</a>
+<body class="admin-body">
 
 
-			<nav class="nav">
-
-				<a
-					class="active"
-					href="admin.html"
-				>
-					سفارشات
-				</a>
-
-				<a href="admin-users.html">
-					کاربران
-				</a>
-
-				<button
-					type="button"
-					id="logout"
-				>
-					خروج
-				</button>
-
-			</nav>
+<div
+    id="admin-shell"
+    class="admin-shell"
+>
 
 
-			<button
-				type="button"
-				id="theme"
-				class="theme"
-			>
-				حالت تاریک
-			</button>
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
 
-		</div>
-
-	</header>
+    <aside
+        id="admin-sidebar"
+        class="admin-sidebar"
+    >
 
 
-	<main class="page admin-main">
+        <a
+            href="admin.html"
+            class="admin-logo"
+        >
 
-		<div
-			class="container"
-			id="root"
-		>
+            <span class="admin-logo-mark">
+                TC
+            </span>
 
-			<div class="admin-loading">
-				در حال بارگذاری...
-			</div>
+            <span class="admin-logo-text">
 
-		</div>
+                <strong>
+                    T-Choob
+                </strong>
 
-	</main>
+                <span>
+                    Video Workspace
+                </span>
 
+            </span>
 
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-	<script src="js/config.js"></script>
-
-	<script src="js/supabase.js"></script>
-
-	<script src="js/auth.js"></script>
-
-	<script src="js/app.js"></script>
-
-	<script src="js/admin.js"></script>
+        </a>
 
 
-	<script>
-
-		document.addEventListener("DOMContentLoaded", () => {
-
-			const logoutButton = document.getElementById("logout");
+        <nav class="admin-nav">
 
 
-			if (logoutButton) {
-
-				logoutButton.addEventListener(
-					"click",
-					logout
-				);
-
-			}
+            <div class="admin-nav-label">
+                مدیریت
+            </div>
 
 
-			adminOrder();
+            <a
+                href="admin.html"
+                class="admin-nav-item"
+            >
 
-		});
+                <span class="admin-nav-icon">
+                    ◫
+                </span>
 
-	</script>
+                <span class="admin-nav-text">
+                    سفارشات
+                </span>
+
+            </a>
+
+
+            <a
+                href="admin-users.html"
+                class="admin-nav-item"
+            >
+
+                <span class="admin-nav-icon">
+                    ◎
+                </span>
+
+                <span class="admin-nav-text">
+                    کاربران
+                </span>
+
+            </a>
+
+
+            <div class="admin-nav-label">
+                حساب
+            </div>
+
+
+            <button
+                id="theme-toggle"
+                class="admin-nav-item"
+                type="button"
+            >
+
+                <span class="admin-nav-icon">
+                    ◐
+                </span>
+
+                <span class="admin-nav-text">
+                    تغییر حالت
+                </span>
+
+            </button>
+
+
+            <button
+                id="logout"
+                class="admin-nav-item"
+                type="button"
+            >
+
+                <span class="admin-nav-icon">
+                    ↪
+                </span>
+
+                <span class="admin-nav-text">
+                    خروج
+                </span>
+
+            </button>
+
+
+        </nav>
+
+
+        <div class="admin-sidebar-bottom">
+
+
+            <div class="admin-sidebar-user">
+
+                <div class="admin-avatar">
+                    A
+                </div>
+
+                <div class="admin-user-text">
+
+                    <strong>
+                        مدیر سیستم
+                    </strong>
+
+                    <span>
+                        Administrator
+                    </span>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+    </aside>
+
+
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
+
+    <main class="admin-main">
+
+
+        <div class="admin-topbar">
+
+
+            <div class="admin-topbar-title">
+
+                <h1>
+                    مدیریت سفارش
+                </h1>
+
+                <p>
+                    مدیریت کامل پروژه، گفتگو و فایل‌ها
+                </p>
+
+            </div>
+
+
+            <div class="admin-topbar-actions">
+
+
+                <button
+                    id="mobile-sidebar"
+                    class="admin-icon-btn"
+                    type="button"
+                    title="منو"
+                >
+                    ☰
+                </button>
+
+
+                <button
+                    id="sidebar-toggle"
+                    class="admin-icon-btn"
+                    type="button"
+                    title="جمع کردن منو"
+                >
+                    ⇥
+                </button>
+
+
+                <button
+                    id="command-open"
+                    class="admin-icon-btn"
+                    type="button"
+                    title="جستجو"
+                >
+                    ⌕
+                </button>
+
+
+                <a
+                    href="admin.html"
+                    class="button secondary"
+                >
+                    بازگشت
+                </a>
+
+
+            </div>
+
+
+        </div>
+
+
+        <div id="root"></div>
+
+
+    </main>
+
+
+</div>
+
+
+<!-- =======================================================
+     COMMAND PALETTE
+======================================================== -->
+
+<div
+    id="command-overlay"
+    class="command-overlay"
+>
+
+
+    <div class="command-box">
+
+
+        <input
+            id="command-search"
+            class="command-search"
+            type="text"
+            placeholder="جستجو در سفارش..."
+            autocomplete="off"
+        >
+
+
+        <div
+            id="command-results"
+            class="command-results"
+        ></div>
+
+
+    </div>
+
+
+</div>
+
+
+<div
+    id="toast-container"
+    class="toast-container"
+></div>
+
+
+<script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+></script>
+
+<script src="js/config.js"></script>
+
+<script src="js/supabase.js"></script>
+
+<script src="js/auth.js"></script>
+
+<script src="js/app.js"></script>
+
+<script src="js/admin.js"></script>
+
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        if (typeof adminOrder === "function") {
+            adminOrder();
+        }
+
+    }
+);
+
+</script>
+
 
 </body>
-
 </html>
