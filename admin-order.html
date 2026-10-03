@@ -3,39 +3,57 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta name="theme-color" content="#31526b">
+	<meta name="theme-color" content="#547c6c">
 	<title>مدیریت سفارش | T-Choob Video</title>
+	<link rel="preload" href="Lalezar-Regular.ttf" as="font" type="font/ttf" crossorigin>
 	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="css/admin.css">
 </head>
 
 <body class="admin-page">
 	<header class="site-header">
 		<div class="container header-inner">
 			<a class="brand" href="admin.html" aria-label="T-Choob Video">
-				<span class="brand-mark">TC</span>
 				<span>T-Choob Video</span>
 			</a>
 
 			<nav class="nav admin-nav" aria-label="ناوبری مدیریت">
 				<a class="active" href="admin.html">سفارشات</a>
-				<a href="admin-users.html">کاربران</a>
-				<button id="logout" class="nav-button danger-text" type="button">خروج</button>
+				<a class="" href="admin-users.html">کاربران</a>
+				<button id="logout" type="button">خروج</button>
 			</nav>
 
-			<button id="theme" class="theme" type="button">حالت تاریک</button>
+			<button id="theme" class="theme" type="button"
+				onclick="toggleTchoobTheme(event)">حالت تاریک</button>
 		</div>
 	</header>
 
-	<main class="page">
-		<div class="container" id="root">
-			<section class="panel">
-				<div class="state">
-					<span class="loading-spinner"></span>
-					<h2 class="state-title">در حال دریافت اطلاعات سفارش...</h2>
+	
+<main class="page admin-main">
+	<div class="container" id="root">
+		<div class="order-workspace">
+			<aside class="order-sidebar" id="order-sidebar">
+				<div class="order-sidebar-header">
+					<h2 class="order-sidebar-title">سفارش</h2>
+					<div class="order-sidebar-number" id="sidebar-order-number">در حال دریافت...</div>
 				</div>
+				<nav class="order-sidebar-nav">
+					<button class="active" type="button" data-section="overview">اطلاعات سفارش <span>›</span></button>
+					<button type="button" data-section="messages">گفتگو <span>›</span></button>
+					<button type="button" data-section="files">فایل‌ها <span>›</span></button>
+					<button type="button" data-section="timeline">تاریخچه وضعیت <span>›</span></button>
+				</nav>
+			</aside>
+
+			<section class="order-workspace-main" id="order-root">
+				<section class="panel">
+					<div class="state"><span class="loading-spinner"></span><h2 class="state-title">در حال دریافت اطلاعات سفارش...</h2></div>
+				</section>
 			</section>
 		</div>
-	</main>
+	</div>
+</main>
+
 
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="js/config.js"></script>
@@ -43,11 +61,10 @@
 	<script src="js/auth.js"></script>
 	<script src="js/app.js"></script>
 	<script src="js/admin.js"></script>
-
 	<script>
 		document.addEventListener("DOMContentLoaded", () => {
 			document.getElementById("logout")?.addEventListener("click", logout);
-			adminOrder();
+			applyTchoobTheme();
 		});
 	</script>
 </body>
