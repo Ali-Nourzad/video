@@ -182,30 +182,36 @@
 				</td>
 			</tr>`;
 
+		// سفارش‌ها را جدا از پروفایل‌ها می‌خوانیم تا به نام constraint
+		// رابطه‌ی Supabase وابسته نباشیم. این روش با schema فعلی پروژه امن‌تر است.
 		const { data, error } = await window.db
 			.from("video_orders")
-			.select(`
-				*,
-				customer:profiles!video_orders_customer_id_fkey(
-					id, first_name, last_name, email, phone, role
-				)
-			`)
+			.select("*")
 			.order("created_at", { ascending: false });
 
 		if (error) {
 			console.error("ADMIN ORDERS ERROR:", error);
-			showError(body.closest(".table-wrap") || body, "دریافت سفارش‌ها انجام نشد.");
+			body.innerHTML = `<tr><td colspan="7" class="table-loading">دریافت سفارش‌ها انجام نشد.<br><small>${esc(error.message || "خطای Supabase")}</small></td></tr>`;
 			return;
 		}
 
 		state.orders = data || [];
 		state.profiles.clear();
 
-		state.orders.forEach((order) => {
-			if (order.customer) {
-				state.profiles.set(order.customer.id, order.customer);
+		const customerIds = [...new Set(state.orders.map(order => order.customer_id).filter(Boolean))];
+
+		if (customerIds.length) {
+			const { data: profiles, error: profileError } = await window.db
+				.from("profiles")
+				.select("id,first_name,last_name,email,phone,role")
+				.in("id", customerIds);
+
+			if (profileError) {
+				console.warn("ADMIN PROFILE LOAD ERROR:", profileError);
+			} else {
+				(profiles || []).forEach(profile => state.profiles.set(profile.id, profile));
 			}
-		});
+		}
 
 		updateStats();
 		updateFilterCounts();
@@ -453,12 +459,7 @@
 
 		const { data: order, error } = await window.db
 			.from("video_orders")
-			.select(`
-				*,
-				customer:profiles!video_orders_customer_id_fkey(
-					id, first_name, last_name, email, phone, address, avatar_url
-				)
-			`)
+			.select("*")
 			.eq("id", id)
 			.maybeSingle();
 
@@ -468,6 +469,17 @@
 			return;
 		}
 
+		let customer = null;
+		if (order.customer_id) {
+			const profileResult = await window.db
+				.from("profiles")
+				.select("id,first_name,last_name,email,phone,address,avatar_url,role")
+				.eq("id", order.customer_id)
+				.maybeSingle();
+			if (!profileResult.error) customer = profileResult.data;
+		}
+
+		order.customer = customer;
 		state.currentOrder = order;
 
 		if ($("sidebar-order-number")) {
@@ -695,7 +707,26 @@
 	   Page boot
 	   --------------------------------------------------------- */
 
-	document.addEventListener("DOMContentLoaded", () => {
+	document.addEventListener("DOMContentLoaded", async () => {
+		applyTchoobTheme();
+
+		const refresh = $("refresh");
+		if (refresh) {
+			refresh.addEventListener("click", () => {
+				if ($("orders-body")) adminOrders();
+				else if ($("users-body")) adminUsers();
+			});
+		}
+
 		$("users-search")?.addEventListener("input", renderUsers);
+
+		// تعیین صفحه به‌صورت خودکار؛ لازم نیست در HTML هر صفحه تابع جداگانه صدا زده شود.
+		if ($("orders-body")) {
+			await adminOrders();
+		} else if ($("users-body")) {
+			await adminUsers();
+		} else if ($("order-root")) {
+			await adminOrder();
+		}
 	});
 })();
