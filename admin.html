@@ -3,138 +3,111 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta name="theme-color" content="#31526b">
+	<meta name="theme-color" content="#547c6c">
 	<title>مدیریت سفارشات | T-Choob Video</title>
+	<link rel="preload" href="Lalezar-Regular.ttf" as="font" type="font/ttf" crossorigin>
 	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="css/admin.css">
 </head>
 
 <body class="admin-page">
 	<header class="site-header">
 		<div class="container header-inner">
 			<a class="brand" href="admin.html" aria-label="T-Choob Video">
-				<span class="brand-mark">TC</span>
 				<span>T-Choob Video</span>
 			</a>
 
 			<nav class="nav admin-nav" aria-label="ناوبری مدیریت">
 				<a class="active" href="admin.html">سفارشات</a>
-				<a href="admin-users.html">کاربران</a>
-				<button id="logout" class="nav-button danger-text" type="button">خروج</button>
+				<a class="" href="admin-users.html">کاربران</a>
+				<button id="logout" type="button">خروج</button>
 			</nav>
 
-			<button id="theme" class="theme" type="button">حالت تاریک</button>
+			<button id="theme" class="theme" type="button"
+				onclick="toggleTchoobTheme(event)">حالت تاریک</button>
 		</div>
 	</header>
 
-	<main class="page">
-		<div class="container">
-			<div class="page-head">
-				<div>
-					<span class="eyebrow">پنل مدیریت</span>
-					<h1>مدیریت سفارشات</h1>
-					<p class="page-subtitle">مدیریت، بررسی و پیگیری سفارش‌های ثبت‌شده</p>
-				</div>
-
-				<button id="refresh" class="button secondary" type="button">
-					<span aria-hidden="true">↻</span>
-					بروزرسانی
-				</button>
+	
+<main class="page admin-main">
+	<div class="container">
+		<section class="admin-topbar">
+			<div>
+				<span class="eyebrow">پنل مدیریت</span>
+				<h1>مدیریت سفارشات</h1>
+				<p class="admin-subtitle">سفارش‌ها، وضعیت تولید و ارتباط با مشتریان را از یک فضای مرتب مدیریت کنید.</p>
 			</div>
+			<div class="admin-actions">
+				<a class="button primary" href="admin-users.html">مدیریت کاربران</a>
+				<button id="refresh" class="button secondary" type="button">↻ بروزرسانی</button>
+			</div>
+		</section>
 
-			<section class="stats admin-stats" aria-label="آمار سفارشات">
-				<div class="stat">
-					<span>کل سفارش‌ها</span>
-					<strong id="total">0</strong>
-				</div>
-				<div class="stat">
-					<span>جدید</span>
-					<strong id="new">0</strong>
-				</div>
-				<div class="stat">
-					<span>در حال انجام</span>
-					<strong id="progress">0</strong>
-				</div>
-				<div class="stat">
-					<span>آماده تحویل</span>
-					<strong id="ready">0</strong>
-				</div>
-				<div class="stat stat-success">
-					<span>تکمیل شده</span>
-					<strong id="completed">0</strong>
-				</div>
-				<div class="stat stat-danger">
-					<span>لغو شده</span>
-					<strong id="cancelled">0</strong>
-				</div>
-			</section>
+		<section class="admin-stats" aria-label="آمار سفارش‌ها">
+			<div class="admin-stat"><span class="admin-stat-label">کل سفارش‌ها</span><strong id="total">0</strong></div>
+			<div class="admin-stat"><span class="admin-stat-label">سفارش‌های جدید</span><strong id="new">0</strong></div>
+			<div class="admin-stat"><span class="admin-stat-label">در حال انجام</span><strong id="progress">0</strong></div>
+			<div class="admin-stat"><span class="admin-stat-label">آماده تحویل</span><strong id="ready">0</strong></div>
+			<div class="admin-stat"><span class="admin-stat-label">تکمیل شده</span><strong id="completed">0</strong></div>
+			<div class="admin-stat"><span class="admin-stat-label">لغو شده</span><strong id="cancelled">0</strong></div>
+		</section>
 
-			<section class="admin-toolbar panel">
-				<div class="filter-tabs" role="tablist" aria-label="فیلتر سفارش‌ها">
-					<button class="filter-tab active" type="button" onclick="filterAdminOrders('all')">
-						همه
-						<span id="filter-all-count">0</span>
+		<section class="admin-layout">
+			<aside class="admin-sidebar">
+				<div class="sidebar-title">مدیریت سفارش‌ها</div>
+
+				<div class="filter-list">
+					<button class="filter-button active" type="button" data-filter="all" onclick="filterAdminOrders('all')">
+						<span>همه سفارش‌ها</span><strong id="filter-all-count">0</strong>
 					</button>
-					<button class="filter-tab" type="button" onclick="filterAdminOrders('active')">
-						در حال انجام
-						<span id="filter-active-count">0</span>
+					<button class="filter-button" type="button" data-filter="active" onclick="filterAdminOrders('active')">
+						<span>در حال انجام</span><strong id="filter-active-count">0</strong>
 					</button>
-					<button class="filter-tab" type="button" onclick="filterAdminOrders('completed')">
-						تکمیل شده
-						<span id="filter-completed-count">0</span>
+					<button class="filter-button" type="button" data-filter="completed" onclick="filterAdminOrders('completed')">
+						<span>تکمیل شده</span><strong id="filter-completed-count">0</strong>
 					</button>
-					<button class="filter-tab" type="button" onclick="filterAdminOrders('cancelled')">
-						لغو شده
-						<span id="filter-cancelled-count">0</span>
+					<button class="filter-button" type="button" data-filter="cancelled" onclick="filterAdminOrders('cancelled')">
+						<span>لغو شده</span><strong id="filter-cancelled-count">0</strong>
 					</button>
 				</div>
+
+				<div class="sidebar-divider"></div>
 
 				<label class="search-box">
-					<span class="search-icon" aria-hidden="true">⌕</span>
-					<input
-						id="orders-search"
-						type="search"
-						placeholder="جست‌وجو بر اساس شماره، عنوان، کاربر، ایمیل..."
-						autocomplete="off"
-						oninput="searchAdminOrders(this.value)"
-					>
+					<span>جستجوی سفارش</span>
+					<input id="orders-search" type="search" placeholder="شماره، عنوان یا نام کاربر..." autocomplete="off" oninput="searchAdminOrders(this.value)">
 				</label>
-			</section>
 
-			<section class="panel orders-panel">
-				<div class="panel-header">
+				<nav class="admin-quick-nav" aria-label="دسترسی سریع">
+					<a href="admin.html"><span>سفارشات</span><span>←</span></a>
+					<a href="admin-users.html"><span>کاربران</span><span>←</span></a>
+				</nav>
+			</aside>
+
+			<section class="admin-content">
+				<div class="panel-heading">
 					<div>
 						<h2 id="orders-caption">همه سفارش‌ها</h2>
 						<p>فهرست سفارش‌ها و وضعیت فعلی آن‌ها</p>
 					</div>
-					<span id="visible-orders-count" class="result-count">0 سفارش</span>
+					<span id="visible-orders-count" class="status status-new">0 سفارش</span>
 				</div>
 
-				<div class="table-wrap">
+				<div class="table-wrap admin-table-wrap">
 					<table class="table admin-table">
-						<thead>
-							<tr>
-								<th>شماره</th>
-								<th>عنوان</th>
-								<th>کاربر</th>
-								<th>مدل</th>
-								<th>وضعیت</th>
-								<th>تاریخ</th>
-								<th>عملیات</th>
-							</tr>
-						</thead>
+						<thead><tr>
+							<th>شماره</th><th>عنوان</th><th>مشتری</th><th>مدل تولید</th><th>وضعیت</th><th>تاریخ</th><th>عملیات</th>
+						</tr></thead>
 						<tbody id="orders-body">
-							<tr>
-								<td colspan="7" class="table-loading">
-									<span class="loading-spinner"></span>
-									در حال دریافت سفارش‌ها...
-								</td>
-							</tr>
+							<tr><td colspan="7" class="table-loading">در حال دریافت سفارش‌ها...</td></tr>
 						</tbody>
 					</table>
 				</div>
 			</section>
-		</div>
-	</main>
+		</section>
+	</div>
+</main>
+
 
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="js/config.js"></script>
@@ -142,12 +115,10 @@
 	<script src="js/auth.js"></script>
 	<script src="js/app.js"></script>
 	<script src="js/admin.js"></script>
-
 	<script>
 		document.addEventListener("DOMContentLoaded", () => {
 			document.getElementById("logout")?.addEventListener("click", logout);
-			document.getElementById("refresh")?.addEventListener("click", adminOrders);
-			adminOrders();
+			applyTchoobTheme();
 		});
 	</script>
 </body>
