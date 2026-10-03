@@ -1,621 +1,66 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
-
 <head>
-
 	<meta charset="utf-8">
-
-	<meta
-		name="viewport"
-		content="width=device-width, initial-scale=1"
-	>
-
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#547c6c">
 	<title>جزئیات سفارش | T-Choob Video</title>
-
-	<link
-		rel="stylesheet"
-		href="css/style.css"
-	>
-
+	<link rel="preload" href="Lalezar-Regular.ttf" as="font" type="font/ttf" crossorigin>
+	<link rel="stylesheet" href="css/style.css">
 </head>
-
-
-<body>
-
+<body class="order-detail-page">
 	<header class="site-header">
-
 		<div class="container header-inner">
-
-			<a
-				class="brand"
-				href="index.html"
-			>
-				T-Choob Video
-			</a>
-
-
+			<a class="brand" href="index.html">T-Choob Video</a>
 			<nav class="nav">
-
-				<a
-					class="active"
-					href="orders.html"
-				>
-					سفارش‌ها
-				</a>
-
-				<a href="new-order.html">
-					ثبت سفارش
-				</a>
-
-				<a href="profile.html">
-					پروفایل
-				</a>
-
-				<button
-					id="logout"
-					type="button"
-				>
-					خروج
-				</button>
-
+				<a class="active" href="orders.html">سفارش‌ها</a>
+				<a href="new-order.html">ثبت سفارش</a>
+				<a href="profile.html">پروفایل</a>
+				<button id="logout" type="button">خروج</button>
 			</nav>
-
-
-			<button
-				id="theme"
-				class="theme"
-				type="button"
-			>
-				حالت تاریک
-			</button>
-
+			<button id="theme" class="theme" type="button">حالت تاریک</button>
 		</div>
-
 	</header>
 
+	<main class="page order-detail-main">
+		<div class="container">
+			<div id="order-loading" class="order-state-card">
+				<span class="loading-spinner"></span>
+				<h2>در حال دریافت سفارش...</h2>
+			</div>
 
-	<main class="page">
+			<div id="order-error" class="order-state-card hidden">
+				<h2>سفارش قابل نمایش نیست</h2>
+				<p id="order-error-text" class="muted"></p>
+				<a class="button primary" href="orders.html">بازگشت به سفارش‌ها</a>
+			</div>
 
-		<div
-			class="container"
-			id="root"
-		></div>
+			<div id="order-content" class="customer-order-workspace hidden">
+				<aside class="customer-order-sidebar">
+					<div class="customer-order-sidebar-head">
+						<span class="eyebrow">سفارش</span>
+						<strong id="sidebar-order-number">—</strong>
+					</div>
+					<nav id="order-section-nav" class="customer-order-nav">
+						<button class="active" type="button" data-section="overview">اطلاعات سفارش <span>‹</span></button>
+						<button type="button" data-section="messages">گفتگو <span>‹</span></button>
+						<button type="button" data-section="files">فایل‌ها <span>‹</span></button>
+						<button type="button" data-section="timeline">تاریخچه وضعیت <span>‹</span></button>
+						<button type="button" data-section="edit">ویرایش سفارش <span>‹</span></button>
+					</nav>
+					<a class="customer-back-link" href="orders.html">← بازگشت به سفارش‌ها</a>
+				</aside>
 
+				<section id="customer-order-view" class="customer-order-view"></section>
+			</div>
+		</div>
 	</main>
-
 
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 	<script src="js/config.js"></script>
 	<script src="js/supabase.js"></script>
 	<script src="js/auth.js"></script>
 	<script src="js/app.js"></script>
-
-
-	<script>
-
-		async function loadOrder() {
-
-			const root =
-				document.getElementById("root");
-
-
-			const authData =
-				await requireUser();
-
-
-			if (!authData) {
-				return;
-			}
-
-
-			const user =
-				authData.user;
-
-
-			if (!user?.id) {
-
-				root.innerHTML = `
-					<div class="empty">
-						اطلاعات کاربر دریافت نشد.
-					</div>
-				`;
-
-				return;
-			}
-
-
-			const id =
-				new URLSearchParams(
-					location.search
-				).get("id");
-
-
-			if (!id) {
-
-				root.innerHTML = `
-					<div class="empty">
-						شناسه سفارش مشخص نیست.
-					</div>
-				`;
-
-				return;
-			}
-
-
-			const {
-				data: order,
-				error
-			} = await window.db
-				.from("video_orders")
-				.select("*")
-				.eq("id", id)
-				.eq(
-					"customer_id",
-					user.id
-				)
-				.single();
-
-
-			if (error || !order) {
-
-				console.error(
-					"LOAD ORDER ERROR:",
-					error
-				);
-
-				root.innerHTML = `
-					<div class="empty">
-						سفارش پیدا نشد.
-					</div>
-				`;
-
-				return;
-			}
-
-
-			const [
-				historyResult,
-				filesResult,
-				messagesResult
-			] = await Promise.all([
-
-				window.db
-					.from("order_status_history")
-					.select("*")
-					.eq("order_id", id)
-					.order(
-						"created_at",
-						{
-							ascending: true
-						}
-					),
-
-				window.db
-					.from("order_files")
-					.select("*")
-					.eq("order_id", id)
-					.order(
-						"created_at",
-						{
-							ascending: true
-						}
-					),
-
-				window.db
-					.from("order_messages")
-					.select("*")
-					.eq("order_id", id)
-					.order(
-						"created_at",
-						{
-							ascending: true
-						}
-					)
-
-			]);
-
-
-			root.innerHTML = `
-
-				<div class="page-head">
-
-					<div>
-
-						<span class="eyebrow">
-							${esc(order.order_number)}
-						</span>
-
-						<h1>
-							${esc(order.title)}
-						</h1>
-
-						<p class="muted">
-							${esc(order.subject)}
-						</p>
-
-					</div>
-
-
-					<span
-						class="status status-${esc(order.status)}"
-					>
-						${statusText(order.status)}
-					</span>
-
-				</div>
-
-
-				<div class="detail-grid">
-
-					<section class="panel">
-
-						<h2>
-							اطلاعات سفارش
-						</h2>
-
-
-						<div class="detail-list">
-
-							<div>
-								<span>
-									مدل
-								</span>
-
-								<strong>
-									${modelText(
-										order.production_model
-									)}
-								</strong>
-							</div>
-
-
-							<div>
-								<span>
-									مدت
-								</span>
-
-								<strong>
-									${esc(
-										order.estimated_duration ||
-										"-"
-									)}
-								</strong>
-							</div>
-
-
-							<div>
-								<span>
-									نسبت تصویر
-								</span>
-
-								<strong>
-									${esc(
-										order.aspect_ratio ||
-										"-"
-									)}
-								</strong>
-							</div>
-
-
-							<div>
-								<span>
-									کیفیت
-								</span>
-
-								<strong>
-									${esc(
-										order.output_quality ||
-										"-"
-									)}
-								</strong>
-							</div>
-
-
-							<div>
-								<span>
-									سبک
-								</span>
-
-								<strong>
-									${esc(
-										order.video_style ||
-										"-"
-									)}
-								</strong>
-							</div>
-
-						</div>
-
-
-						<h3>
-							توضیحات
-						</h3>
-
-						<p>
-							${esc(order.description)}
-						</p>
-
-
-						<h3>
-							توضیحات ویژه
-						</h3>
-
-						<p>
-							${esc(
-								order.special_notes ||
-								"-"
-							)}
-						</p>
-
-					</section>
-
-
-					<section class="panel">
-
-						<h2>
-							تاریخچه وضعیت
-						</h2>
-
-
-						<div class="timeline">
-
-							${
-								(historyResult.data || [])
-									.map(
-										item => `
-
-											<div class="timeline-item">
-
-												<strong>
-													${statusText(
-														item.status
-													)}
-												</strong>
-
-												<span>
-													${date(
-														item.created_at
-													)}
-												</span>
-
-												<p>
-													${esc(
-														item.note ||
-														""
-													)}
-												</p>
-
-											</div>
-
-										`
-									)
-									.join("")
-								||
-								`
-									<p class="muted">
-										هنوز موردی ثبت نشده است.
-									</p>
-								`
-							}
-
-						</div>
-
-					</section>
-
-				</div>
-
-
-				<section class="panel gap">
-
-					<h2>
-						فایل‌ها
-					</h2>
-
-
-					<div class="file-list">
-
-						${
-							(filesResult.data || [])
-								.map(
-									file => `
-
-										<a
-											class="file-row"
-											href="${esc(
-												file.file_url
-											)}"
-											target="_blank"
-											rel="noopener noreferrer"
-										>
-
-											<span>
-												${esc(
-													file.file_name
-												)}
-											</span>
-
-											<span>
-												${bytes(
-													file.file_size
-												)}
-											</span>
-
-										</a>
-
-									`
-								)
-								.join("")
-							||
-							`
-								<p class="muted">
-									فایلی وجود ندارد.
-								</p>
-							`
-						}
-
-					</div>
-
-				</section>
-
-
-				<section class="panel gap">
-
-					<h2>
-						گفتگو
-					</h2>
-
-
-					<div class="messages">
-
-						${
-							(messagesResult.data || [])
-								.map(
-									message => `
-
-										<div
-											class="bubble ${
-												message.sender_id === user.id
-													? "mine"
-													: ""
-											}"
-										>
-
-											<p>
-												${esc(
-													message.message
-												)}
-											</p>
-
-											<time>
-												${date(
-													message.created_at
-												)}
-											</time>
-
-										</div>
-
-									`
-								)
-								.join("")
-							||
-							`
-								<p class="muted">
-									هنوز پیامی ثبت نشده است.
-								</p>
-							`
-						}
-
-					</div>
-
-
-					<form
-						id="message-form"
-						class="form"
-					>
-
-						<textarea
-							id="message-input"
-							rows="3"
-							placeholder="پیام خود را بنویسید..."
-							required
-						></textarea>
-
-
-						<button
-							class="button primary"
-							type="submit"
-						>
-							ارسال پیام
-						</button>
-
-					</form>
-
-				</section>
-
-			`;
-
-
-			document
-				.getElementById("message-form")
-				.addEventListener(
-					"submit",
-					async event => {
-
-						event.preventDefault();
-
-
-						const input =
-							document.getElementById(
-								"message-input"
-							);
-
-
-						const text =
-							input.value.trim();
-
-
-						if (!text) {
-							return;
-						}
-
-
-						const {
-							error
-						} = await window.db
-							.from("order_messages")
-							.insert({
-								order_id: id,
-								sender_id: user.id,
-								message: text
-							});
-
-
-						if (error) {
-
-							console.error(
-								"SEND MESSAGE ERROR:",
-								error
-							);
-
-							return;
-						}
-
-
-						input.value = "";
-
-						await loadOrder();
-
-					}
-				);
-
-		}
-
-
-		document.addEventListener(
-			"DOMContentLoaded",
-			() => {
-
-				loadOrder();
-
-
-				const logoutButton =
-					document.getElementById("logout");
-
-
-				if (logoutButton) {
-
-					logoutButton.addEventListener(
-						"click",
-						logout
-					);
-
-				}
-
-			}
-		);
-
-	</script>
-
+	<script src="js/order.js"></script>
 </body>
-
 </html>
