@@ -24,6 +24,9 @@
 		currentOrder: null,
 		messages: [],
 		files: [],
+		mediaRecorder: null,
+		recordedChunks: [],
+		recordingStream: null,
 		history: []
 	};
 
@@ -101,8 +104,7 @@
 
 	window.applyTchoobTheme = function () {
 		const saved =
-			localStorage.getItem("tchoob-theme") ||
-			localStorage.getItem("tchoob-admin-theme");
+			localStorage.getItem("tchoob-video-theme");
 
 		const dark = saved === "dark";
 
@@ -121,8 +123,7 @@
 		const dark =
 			document.documentElement.classList.contains("dark-mode");
 
-		localStorage.setItem("tchoob-theme", dark ? "light" : "dark");
-		localStorage.setItem("tchoob-admin-theme", dark ? "light" : "dark");
+		localStorage.setItem("tchoob-video-theme", dark ? "light" : "dark");
 
 		applyTchoobTheme();
 	};
@@ -548,6 +549,11 @@
 			return;
 		}
 
+		if (section === "edit") {
+			await renderAdminEdit();
+			return;
+		}
+
 		if (section === "messages") {
 			await renderMessages();
 			return;
@@ -563,72 +569,186 @@
 		}
 	}
 
+	async function loadAdminMessages() {
+		const order = state.currentOrder;
+		const { data, error } = await window.db
+			.from("order_messages")
+			.select("id,order_id,sender_id,message,file_id,created_at,file:order_files(*)")
+			.eq("order_id", order.id)
+			.order("created_at", { ascending: true });
+		if (error) throw error;
+		state.messages = data || [];
+	}
+
+	function adminAttachmentMarkup(file) {
+		if (!file?.file_url) return "";
+		const url = esc(file.file_url);
+		const name = esc(file.file_name || "فایل پیوست");
+		const mime = file.mime_type || "";
+		if (mime.startsWith("image/")) return `<a class="chat-attachment image" href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${name}" loading="lazy"><span>${name}</span></a>`;
+		if (mime.startsWith("video/")) return `<div class="chat-attachment video"><video controls preload="metadata" src="${url}"></video><span>${name}</span></div>`;
+		if (mime.startsWith("audio/")) return `<div class="chat-attachment audio"><audio controls src="${url}"></audio><span>${name}</span></div>`;
+		return `<a class="chat-file-link" href="${url}" target="_blank" rel="noopener">📎 ${name}</a>`;
+	}
+
+	let selectedAdminFile = null;
+
+	async function uploadAdminOrderFile(file) {
+		const order = state.currentOrder;
+		const admin = await getAdmin();
+		const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+		const path = `${order.customer_id}/orders/${order.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safe}`;
+		const { error: uploadError } = await window.db.storage.from("video-files").upload(path, file, { upsert: false, contentType: file.type || undefined });
+		if (uploadError) throw uploadError;
+		const { data: urlData } = window.db.storage.from("video-files").getPublicUrl(path);
+		const { data: record, error: recordError } = await window.db.from("order_files").insert({
+			order_id: order.id,
+			uploaded_by: admin.user.id,
+			file_name: file.name,
+			file_path: path,
+			file_url: urlData.publicUrl,
+			file_size: file.size,
+			mime_type: file.type || "application/octet-stream",
+			file_role: "message"
+		}).select("*").single();
+		if (recordError) throw recordError;
+		return record;
+	}
+
+	async function sendAdminMessage(fileOverride = null, messageOverride = null) {
+		const input = $("admin-chat-input");
+		const text = (messageOverride ?? input?.value ?? "").trim();
+		const file = fileOverride || selectedAdminFile;
+		if (!text && !file) return;
+		const sendButton = document.querySelector("#admin-chat-form .chat-send");
+		if (sendButton) sendButton.disabled = true;
+		try {
+			const admin = await getAdmin();
+			if (!admin) return;
+			let fileRecord = null;
+			if (file) fileRecord = await uploadAdminOrderFile(file);
+			const { error } = await window.db.from("order_messages").insert({
+				order_id: state.currentOrder.id,
+				sender_id: admin.user.id,
+				message: text || "فایل پیوست شد.",
+				file_id: fileRecord?.id || null
+			});
+			if (error) throw error;
+			if (input) input.value = "";
+			selectedAdminFile = null;
+			if ($("admin-file-input")) $("admin-file-input").value = "";
+			if ($("admin-attachment-preview")) $("admin-attachment-preview").innerHTML = "";
+			await renderMessages();
+		} catch (error) {
+			console.error("SEND ADMIN MESSAGE ERROR:", error);
+			alert(error?.message || "ارسال پیام انجام نشد.");
+		} finally {
+			if (sendButton) sendButton.disabled = false;
+		}
+	}
+
 	async function renderMessages() {
 		const order = state.currentOrder;
 		const root = $("order-root");
-
-		const { data, error } = await window.db
-			.from("order_messages")
-			.select("id,order_id,sender_id,message,created_at")
-			.eq("order_id", order.id)
-			.order("created_at", { ascending: true });
-
-		if (error) {
-			root.innerHTML = `<section class="panel"><div class="orders-error-message">گفتگو دریافت نشد.</div></section>`;
+		try { await loadAdminMessages(); } catch (error) {
+			root.innerHTML = `<section class="panel"><div class="orders-error-message">گفتگو دریافت نشد.<br><small>${esc(error.message)}</small></div></section>`;
 			return;
 		}
-
-		state.messages = data || [];
 
 		root.innerHTML = `
 			<section class="admin-chat">
 				<div class="panel-heading">
 					<div><span class="eyebrow">ارتباط</span><h2>گفتگو با مشتری</h2><p>${esc(order.order_number)}</p></div>
+					<span class="chat-online-dot">گفتگو</span>
 				</div>
-
-				<div class="admin-chat-messages">
+				<div id="admin-chat-messages" class="admin-chat-messages">
 					${state.messages.length ? state.messages.map(message => `
-						<div class="chat-message ${message.sender_id === order.customer_id ? "customer" : "admin"}">
+						<article class="chat-message ${message.sender_id === order.customer_id ? "customer" : "admin"}">
 							<div class="chat-message-meta">${message.sender_id === order.customer_id ? "مشتری" : "مدیریت"} · ${esc(formatDate(message.created_at))}</div>
-							<div class="chat-message-text">${esc(message.message)}</div>
-						</div>
-					`).join("") : `<div class="empty-state">هنوز پیامی ثبت نشده است.</div>`}
+							${message.message ? `<div class="chat-message-text">${esc(message.message)}</div>` : ""}
+							${message.file ? adminAttachmentMarkup(message.file) : ""}
+						</article>`).join("") : `<div class="chat-empty"><strong>هنوز پیامی وجود ندارد</strong><span>اولین پیام را ارسال کنید.</span></div>`}
 				</div>
-
 				<form class="admin-chat-composer" id="admin-chat-form">
-					<textarea id="admin-chat-input" placeholder="پیام خود را بنویسید..." required></textarea>
+					<div id="admin-attachment-preview" class="chat-attachment-preview"></div>
+					<textarea id="admin-chat-input" placeholder="پیام خود را بنویسید...\nEnter برای ارسال · Shift + Enter برای خط بعد" autocomplete="off"></textarea>
 					<div class="admin-chat-tools">
-						<button class="button primary" type="submit">ارسال</button>
+						<label class="chat-tool" title="ضمیمه کردن عکس، فیلم یا فایل">📎<input id="admin-file-input" type="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.zip,.rar,.txt" hidden></label>
+						<button class="chat-tool" id="admin-voice-button" type="button" title="ضبط ویس">🎙️</button>
+						<button class="chat-tool recording hidden" id="admin-stop-voice" type="button" title="توقف ضبط">⏹</button>
+						<span id="admin-recording-label" class="recording-label"></span>
+						<button class="button primary chat-send" type="submit">ارسال ↵</button>
 					</div>
 				</form>
 			</section>`;
 
-		$("admin-chat-form")?.addEventListener("submit", async (event) => {
-			event.preventDefault();
-
-			const input = $("admin-chat-input");
-			const message = input?.value.trim();
-			if (!message) return;
-
-			const admin = await getAdmin();
-			if (!admin) return;
-
-			const { error: insertError } = await window.db
-				.from("order_messages")
-				.insert({
-					order_id: order.id,
-					sender_id: admin.user.id,
-					message
-				});
-
-			if (insertError) {
-				alert("ارسال پیام انجام نشد.");
-				return;
-			}
-
-			await renderMessages();
+		const form = $("admin-chat-form"), input = $("admin-chat-input"), fileInput = $("admin-file-input");
+		fileInput?.addEventListener("change", () => {
+			selectedAdminFile = fileInput.files?.[0] || null;
+			if ($("admin-attachment-preview")) $("admin-attachment-preview").innerHTML = selectedAdminFile ? `<div class="selected-attachment">📎 ${esc(selectedAdminFile.name)} <button type="button" onclick="clearAdminAttachment()">×</button></div>` : "";
 		});
+		input?.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
+		form?.addEventListener("submit", async e => { e.preventDefault(); await sendAdminMessage(); });
+		$("admin-voice-button")?.addEventListener("click", startAdminVoice);
+		$("admin-stop-voice")?.addEventListener("click", stopAdminVoice);
+		requestAnimationFrame(() => { const box = $("admin-chat-messages"); if (box) box.scrollTop = box.scrollHeight; });
 	}
+
+	window.clearAdminAttachment = function () {
+		selectedAdminFile = null;
+		if ($("admin-file-input")) $("admin-file-input").value = "";
+		if ($("admin-attachment-preview")) $("admin-attachment-preview").innerHTML = "";
+	};
+
+	async function startAdminVoice() {
+		if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { alert("مرورگر شما ضبط ویس را پشتیبانی نمی‌کند."); return; }
+		try {
+			state.recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			state.recordedChunks = [];
+			state.mediaRecorder = new MediaRecorder(state.recordingStream);
+			state.mediaRecorder.ondataavailable = e => { if (e.data.size) state.recordedChunks.push(e.data); };
+			state.mediaRecorder.onstop = async () => {
+				const blob = new Blob(state.recordedChunks, { type: state.mediaRecorder.mimeType || "audio/webm" });
+				const file = new File([blob], `voice-${Date.now()}.webm`, { type: blob.type || "audio/webm" });
+				state.recordingStream?.getTracks().forEach(t => t.stop());
+				$("admin-voice-button")?.classList.remove("hidden"); $("admin-stop-voice")?.classList.add("hidden"); if ($("admin-recording-label")) $("admin-recording-label").textContent = "";
+				await sendAdminMessage(file, "پیام صوتی");
+			};
+			state.mediaRecorder.start();
+			$("admin-voice-button")?.classList.add("hidden"); $("admin-stop-voice")?.classList.remove("hidden"); if ($("admin-recording-label")) $("admin-recording-label").textContent = "در حال ضبط...";
+		} catch (error) { console.error(error); alert("دسترسی به میکروفون داده نشد."); }
+	}
+	function stopAdminVoice() { if (state.mediaRecorder?.state !== "inactive") state.mediaRecorder.stop(); }
+
+	async function renderAdminEdit() {
+		const o = state.currentOrder;
+		$("order-root").innerHTML = `<section class="panel order-edit-panel"><div class="panel-heading"><div><span class="eyebrow">مدیریت</span><h2>ویرایش سفارش</h2><p>اطلاعات سفارش و وضعیت تولید را اصلاح کنید.</p></div></div><form id="admin-edit-form" class="order-edit-form"><div class="edit-form-grid">${adminOrderEditFields(o)}</div><div class="edit-form-actions"><button class="button secondary" type="button" onclick="switchAdminOrderSection('overview')">انصراف</button><button class="button primary" type="submit">ذخیره تغییرات</button></div></form></section>`;
+		$("admin-edit-form")?.addEventListener("submit", saveAdminOrder);
+	}
+
+	function adminOrderEditFields(o) {
+		const statuses = {new:"جدید",review:"در حال بررسی",approved:"تأیید شده",production:"در حال تولید",editing:"در حال تدوین",revision:"نیازمند اصلاح",ready:"آماده تحویل",completed:"تکمیل شده",cancelled:"لغو شده"};
+		return `<label>عنوان سفارش<input name="title" maxlength="180" value="${esc(o.title)}" required></label><label>موضوع<input name="subject" maxlength="250" value="${esc(o.subject)}" required></label><label class="full">توضیحات<textarea name="description" rows="5" required>${esc(o.description)}</textarea></label><label>مدل تولید<select name="production_model"><option value="edit_only" ${o.production_model==="edit_only"?"selected":""}>فقط تدوین</option><option value="voice_ready" ${o.production_model==="voice_ready"?"selected":""}>تصویر و تدوین</option><option value="visual_ready" ${o.production_model==="visual_ready"?"selected":""}>صوت و تدوین</option><option value="script_ready" ${o.production_model==="script_ready"?"selected":""}>صوت، تصویر و تدوین</option><option value="full_production" ${o.production_model==="full_production"?"selected":""}>تولید کامل</option></select></label><label>مدت<input name="estimated_duration" value="${esc(o.estimated_duration||"")}"></label><label>نسبت تصویر<select name="aspect_ratio"><option value="16:9" ${o.aspect_ratio==="16:9"?"selected":""}>16:9</option><option value="9:16" ${o.aspect_ratio==="9:16"?"selected":""}>9:16</option><option value="1:1" ${o.aspect_ratio==="1:1"?"selected":""}>1:1</option><option value="4:5" ${o.aspect_ratio==="4:5"?"selected":""}>4:5</option></select></label><label>کیفیت<select name="output_quality"><option value="1080p" ${o.output_quality==="1080p"?"selected":""}>1080p</option><option value="720p" ${o.output_quality==="720p"?"selected":""}>720p</option><option value="4K" ${o.output_quality==="4K"?"selected":""}>4K</option></select></label><label>سبک<input name="video_style" value="${esc(o.video_style||"")}"></label><label>وضعیت<select name="status">${Object.entries(statuses).map(([k,v])=>`<option value="${k}" ${o.status===k?"selected":""}>${v}</option>`).join("")}</select></label><label>هزینه برآوردی<input name="estimated_cost" type="number" min="0" step="0.01" value="${o.estimated_cost??""}></label><label>هزینه نهایی<input name="final_cost" type="number" min="0" step="0.01" value="${o.final_cost??""}></label><label>وضعیت پرداخت<select name="payment_status"><option value="unpaid" ${o.payment_status==="unpaid"?"selected":""}>پرداخت نشده</option><option value="pending" ${o.payment_status==="pending"?"selected":""}>در انتظار</option><option value="paid" ${o.payment_status==="paid"?"selected":""}>پرداخت شده</option><option value="refunded" ${o.payment_status==="refunded"?"selected":""}>برگشت وجه</option></select></label><label class="full">لینک‌های مرجع<textarea name="reference_links" rows="3">${esc(o.reference_links||"")}</textarea></label><label class="full">توضیحات ویژه<textarea name="special_notes" rows="3">${esc(o.special_notes||"")}</textarea></label>`;
+	}
+
+	async function saveAdminOrder(e) {
+		e.preventDefault();
+		const admin = await getAdmin(); if (!admin) return;
+		const f = new FormData(e.currentTarget);
+		const payload = {title:f.get("title").trim(),subject:f.get("subject").trim(),description:f.get("description").trim(),estimated_duration:f.get("estimated_duration")?.trim()||null,production_model:f.get("production_model"),aspect_ratio:f.get("aspect_ratio")||null,output_quality:f.get("output_quality")||null,video_style:f.get("video_style")?.trim()||null,reference_links:f.get("reference_links")?.trim()||null,special_notes:f.get("special_notes")?.trim()||null,status:f.get("status"),estimated_cost:f.get("estimated_cost")===""?null:Number(f.get("estimated_cost")),final_cost:f.get("final_cost")===""?null:Number(f.get("final_cost")),payment_status:f.get("payment_status")};
+		const oldStatus=state.currentOrder.status;
+		const {data:updated,error}=await window.db.from("video_orders").update(payload).eq("id",state.currentOrder.id).select("*").single();
+		if(error){alert(error.message||"ذخیره تغییرات انجام نشد.");return;}
+		if(oldStatus!==updated.status){await window.db.from("order_status_history").insert({order_id:updated.id,status:updated.status,changed_by:admin.user.id,note:"وضعیت سفارش توسط مدیریت تغییر کرد."});}
+		state.currentOrder=updated;
+		alert("تغییرات سفارش ذخیره شد.");
+		await switchOrderSection("overview");
+	}
+
+	window.switchAdminOrderSection = async function(section) {
+		document.querySelectorAll(".order-sidebar-nav button").forEach(btn=>btn.classList.toggle("active",btn.dataset.section===section));
+		await switchOrderSection(section);
+	};
 
 	async function renderFiles() {
 		const order = state.currentOrder;
